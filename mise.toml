@@ -1,0 +1,20 @@
+[tools]
+bun = "1.4.2"
+
+[tasks.dev]
+run = "bb plugin dev"
+
+[tasks.test]
+run = "bun test"
+
+[tasks.typecheck]
+run = "bun x tsc --noEmit"
+
+[tasks.build]
+run = "bb plugin build"
+
+[tasks.verify-live]
+run = "bun scripts/live-check.ts"
+
+[tasks.install]
+run = "bun install"

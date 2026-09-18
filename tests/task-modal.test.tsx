@@ -1,0 +1,75 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { afterEach, expect, test } from "bun:test";
+if (typeof document === "undefined") GlobalRegistrator.register();
+const { installTestPluginRuntime, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+installTestPluginRuntime();
+// Happy DOM does not implement the native top-layer dialog API.
+HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
+const { render, fireEvent, cleanup, waitFor } = await import("@testing-library/react");
+const { default: TaskModal } = await import("../src/TaskModal");
+const { parseTask } = await import("../src/task-format");
+const task = parseTask("---\nid: T-1\ntitle: Original\nstatus: To Do\n---\n## Description\nHello **world**\n", { path: "task.md", revision: "r", storage: "active" });
+afterEach(() => { cleanup(); sessionStorage.clear(); });
+test("fields start in preview and double-click enables explicit editing", () => {
+ const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.queryByLabelText("Draft")).toBeNull();
+ fireEvent.doubleClick(view.getByText("Original"));
+ expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("Original");
+ fireEvent.click(view.getByText("Cancel edit")); expect(view.queryByLabelText("Draft")).toBeNull();
+});
+test("external snapshots update previews without discarding the active draft", () => {
+ const props = { statuses: ["To Do", "Done"], onClose: () => undefined, onSave: async () => ({ task, conflict: false, message: "" }) };
+ const view = render(<TaskModal {...props} task={task} />);
+ fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } });
+ view.rerender(<TaskModal {...props} task={{ ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title", status: "Done" } }} />);
+ expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft"); expect(view.getByText("Agent title")).toBeTruthy(); expect(view.getByText("Done")).toBeTruthy();
+});
+test("save conflict preserves draft and requires explicit resolution", async () => {
+ const current = { ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title" } };
+ const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task: current, conflict: true, message: "Conflict: title changed on disk." })} />);
+ fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } }); fireEvent.click(view.getByText("Save changes"));
+ await waitFor(() => expect(view.getByText("Current file value")).toBeTruthy());
+ expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft");
+ expect((view.getByText("Save changes") as HTMLButtonElement).disabled).toBe(true);
+ fireEvent.click(view.getByText("Use my draft over this value")); expect((view.getByText("Save changes") as HTMLButtonElement).disabled).toBe(false);
+});
+test("Escape cancels the active edit before closing; close button never discards draft", () => {
+ let closes = 0;
+ const view = render(<TaskModal task={task} statuses={["To Do"]} onClose={() => { closes++; }} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ fireEvent.click(view.getByLabelText("Edit title")); fireEvent.click(view.getByLabelText("Close task")); expect(closes).toBe(0);
+ fireEvent(view.container.querySelector("dialog")!, new Event("cancel", { bubbles: false, cancelable: true }));
+ expect(view.queryByLabelText("Draft")).toBeNull(); expect(closes).toBe(0);
+ fireEvent(view.container.querySelector("dialog")!, new Event("cancel", { bubbles: false, cancelable: true })); expect(closes).toBe(1);
+});
+test("Markdown is rendered once and unsafe HTML does not execute", () => {
+ const view = render(<TaskModal task={{ ...task, body: "## Description\n**Bold**\n<script>alert(1)</script>\n[x](javascript:alert(1))" }} statuses={["To Do"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.container.querySelectorAll("strong")).toHaveLength(1); expect(view.container.querySelector("script")).toBeNull(); expect(view.container.querySelector("a")?.getAttribute("href")).not.toContain("javascript:");
+});
+
+test("Backlog markers and HTML comments are hidden in rendered task prose", () => {
+ const body = "## Description\n<!-- SECTION:DESCRIPTION:BEGIN -->\nVisible prose\n<!-- private note -->\n<!-- SECTION:DESCRIPTION:END -->";
+ const view = render(<TaskModal task={{ ...task, body }} statuses={["To Do"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.getByText("Visible prose")).toBeTruthy();
+ expect(view.container.textContent).not.toContain("<!--");
+ expect(view.container.textContent).not.toContain("private note");
+});
+
+test("unsaved drafts survive unmount and reopening in the same session", () => {
+ const props = { task, statuses: ["To Do"], onClose: () => undefined, onSave: async () => ({ task, conflict: false, message: "" }) };
+ const view = render(<TaskModal {...props} />);
+ fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "Keep this draft" } });
+ view.unmount();
+ const next = render(<TaskModal {...props} />);
+ expect((next.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("Keep this draft");
+});
+
+test("related subtasks render structured linked rows", () => {
+ const child = { ...task, id: "T-1.1", title: "Verify child task", path: "child.md", status: "Done", fields: { ...task.fields, assignee: ["developer"] } };
+ let opened = "";
+ const view = render(<TaskModal task={task} relatedTasks={[task, child]} onOpenTask={selected => { opened = selected.id; }} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.getByLabelText("Subtasks")).toBeTruthy();
+ expect(view.getByText("1 of 1 complete")).toBeTruthy();
+ fireEvent.click(view.getByText("Verify child task"));
+ expect(opened).toBe("T-1.1");
+});

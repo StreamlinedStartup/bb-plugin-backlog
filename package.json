@@ -1,0 +1,48 @@
+{
+  "name": "bb-plugin-backlog",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.43",
+    "bbPluginSdk": ">=0.4.87"
+  },
+  "bb": {
+    "name": "Backlog",
+    "description": "A live Kanban board for Backlog.md tasks across BB projects.",
+    "branding": {
+      "icon": "ListTodo"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "host": "./host.ts",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.87",
+    "@happy-dom/global-registrator": "^20.14.5",
+    "@testing-library/react": "^16.3.3",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/bun": "^1.4.2",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/ws": "^8.18.1",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "happy-dom": "^20.14.5",
+    "hono": "^4.11.9",
+    "react": "19",
+    "react-dom": "19",
+    "typescript": "^5.7.0",
+    "ws": "^8.21.3"
+  }
+}

@@ -1,0 +1,152 @@
+.backlog-root,.backlog-modal{color-scheme:light;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20252b;background:#fff;--backlog-border:#dde1e6;--backlog-muted:#626b77;--backlog-blue:#235dc1}
+:is(.backlog-root,.backlog-modal) *{box-sizing:border-box}
+.backlog-root{height:100%;min-height:0;width:100%;display:grid;grid-template-columns:112px minmax(0,1fr) 210px;overflow:hidden}
+:is(.backlog-root,.backlog-modal) button,:is(.backlog-root,.backlog-modal) input,:is(.backlog-root,.backlog-modal) select,:is(.backlog-root,.backlog-modal) textarea{font:inherit;color:#20252b;background:#fff;border:1px solid #dde1e6;border-radius:5px;padding:7px 10px}
+:is(.backlog-root,.backlog-modal) button{cursor:pointer;white-space:nowrap}
+:is(.backlog-root,.backlog-modal) button:hover{background:#f2f5fa;border-color:#b8c5d9}
+:is(.backlog-root,.backlog-modal) button:disabled{opacity:.5;cursor:default}
+:is(.backlog-root,.backlog-modal) :focus-visible{outline:2px solid #235dc1;outline-offset:2px}
+:is(.backlog-root,.backlog-modal) .primary{background:#235dc1;color:#fff;border-color:#235dc1}
+.backlog-root .section-nav{border-right:1px solid #dde1e6;padding:23px 12px}
+.backlog-root .section-nav strong{display:block;margin:0 4px 25px;font-size:14px}
+.backlog-root .section-link{display:block;width:100%;text-align:left;border:0;background:#edf3fc;color:#235dc1;font-weight:600}
+.backlog-root .board-area{min-width:0;min-height:0;display:flex;flex-direction:column;padding:22px 24px 0;overflow:auto}
+.backlog-root .toolbar{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid #dde1e6}
+.backlog-root .toolbar h1{font-size:23px;letter-spacing:-.4px;font-weight:650;margin:0}
+.backlog-root .toolbar p{font-size:12px;color:#626b77;margin:5px 0 0;overflow-wrap:anywhere}
+.backlog-root .connection{font-size:12px;color:#386c50;white-space:nowrap;padding-top:6px}
+.backlog-root .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:16px 0}
+.backlog-root .controls>input{flex:1;min-width:130px;max-width:400px}
+.backlog-root .completed-toggle{font-size:12px;display:flex;align-items:center;gap:5px;color:#626b77}
+.backlog-root .completed-toggle input{accent-color:#235dc1}
+.backlog-root .lanes{display:flex;gap:14px;align-items:stretch;overflow:auto;flex:1;min-height:220px;padding-bottom:20px}
+.backlog-root .lane{width:270px;min-width:250px;flex:1 0 250px;max-width:340px;background:#f5f6f8;border-radius:8px;align-self:flex-start;min-height:260px;border:1px solid #e8ebef}
+.backlog-root .lane>header{display:flex;justify-content:space-between;align-items:center;padding:14px 13px 10px}
+.backlog-root .lane h2{font-size:14px;font-weight:650;margin:0}
+.backlog-root .lane>header>span{color:#626b77;font-size:12px;padding:1px 6px;background:#e9ecf0;border-radius:4px}
+.backlog-root .lane-cards{padding:0 8px 8px}
+.backlog-root .task-card{background:#fff;border:1px solid #dde1e6;border-radius:6px;padding:12px;margin:6px 0 9px;cursor:grab;box-shadow:0 1px 2px #20252b06}
+.backlog-root .task-card:active{cursor:grabbing}
+.backlog-root .task-card:hover{border-color:#9cb3d5}
+.backlog-root .drop-slot:hover{border-top-color:#235dc1}
+.backlog-root .card-top,.backlog-root .card-footer{display:flex;justify-content:space-between;gap:8px;align-items:center}
+:is(.backlog-root,.backlog-modal) .task-id{font-size:12px;color:#626b77}
+.backlog-root .issue-dot{color:#924c20;font-size:11px}
+.backlog-root .task-card h3{font-size:15px;font-weight:550;line-height:1.45;margin:8px 0;overflow-wrap:anywhere}
+.backlog-root .card-meta{font-size:12px;color:#626b77;text-transform:capitalize}
+.backlog-root .card-tags{display:flex;gap:4px;flex-wrap:wrap;margin:9px 0}
+.backlog-root .card-tags span{background:#f1f4f8;color:#526279;padding:2px 6px;border-radius:3px;font-size:11px;overflow-wrap:anywhere}
+.backlog-root .card-footer{font-size:12px;color:#626b77}
+.backlog-root .card-footer>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.backlog-root .lane-empty{color:#737e8a;text-align:center;font-size:12px;padding:19px 10px}
+.backlog-root .lane-warning{font-size:12px;color:#924c20;margin:0 12px 8px}
+.backlog-root .empty{margin:30px auto;max-width:500px;text-align:center;padding:30px 20px;color:#626b77}
+.backlog-root .empty h2{font-size:20px;color:#20252b;margin-bottom:12px}
+.backlog-root .empty-hint{color:#626b77;margin:0 0 15px}
+.backlog-root .project-rail{border-left:1px solid #dde1e6;padding:24px 12px;overflow:auto;background:#fcfcfd}
+.backlog-root .rail-heading{display:flex;justify-content:space-between;align-items:center;margin:0 8px 17px}
+.backlog-root .rail-heading h2{font-size:13px;font-weight:600;margin:0}
+.backlog-root .rail-heading>span{font-size:12px;color:#626b77}
+.backlog-root .project-row{display:flex;width:100%;border:0;gap:8px;align-items:center;text-align:left;margin-bottom:4px;padding:10px;white-space:normal;background:transparent}
+.backlog-root .project-row.selected{color:#235dc1;background:#edf3fc;font-weight:550}
+.backlog-root .project-row small{margin-left:auto;color:#626b77;font-size:10px}
+:is(.backlog-root,.backlog-modal) .notice{padding:11px 13px;background:#f5f6f8;border:1px solid #dde1e6;border-radius:5px;margin:8px 0;overflow-wrap:anywhere}
+:is(.backlog-root,.backlog-modal) .error{color:#8d3c24;background:#fff8f4;border-color:#e8cebd}
+.backlog-root .folder-settings{border:1px solid #dde1e6;border-radius:8px;padding:16px;margin-bottom:18px;background:#fcfcfd}
+.backlog-root .folder-settings>header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.backlog-root .folder-settings h2{font-size:16px;margin:0}
+.backlog-root .folder-settings>label{display:flex;flex-direction:column;gap:6px;margin-top:15px}
+.backlog-root .folder-settings p{color:#626b77;font-size:12px;margin-top:8px}
+.backlog-modal{border:1px solid #dde1e6;border-radius:12px;padding:0;width:min(920px,calc(100vw - 40px));max-width:920px;max-height:calc(100vh - 50px);margin:auto;box-shadow:0 20px 70px #20252b33;overflow:auto}
+.backlog-modal::backdrop{background:rgb(32 37 43 / 35%)}
+.backlog-modal .task-modal{padding:28px 34px}
+.backlog-modal .modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding-bottom:18px}
+.backlog-modal .modal-header h2{font-size:25px;font-weight:650;letter-spacing:-.4px;line-height:1.3;margin:8px 0 0;overflow-wrap:anywhere}
+.backlog-modal .detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 24px;padding:20px 0;border-block:1px solid #dde1e6;margin:0 0 16px}
+.backlog-modal dt{font-size:12px;color:#626b77;display:flex;align-items:center;gap:6px}
+.backlog-modal dd{margin:4px 0 0;font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap}
+.backlog-modal .inline-edit{font-size:11px;font-weight:400;letter-spacing:0;color:#626b77;padding:2px 5px;border:0;background:transparent;margin-left:5px;vertical-align:middle}
+.backlog-modal .raw-fields{color:#626b77;font-size:12px;margin-bottom:20px}
+.backlog-modal .raw-fields pre{white-space:pre-wrap}
+.backlog-modal .field-editor{padding:18px;border:1px solid #b6c9e6;border-radius:8px;background:#f8faff;margin:18px 0}
+.backlog-modal .editor-heading h3{font-size:16px;margin:0 0 3px}
+.backlog-modal .editor-heading span{font-size:12px;color:#626b77}
+.backlog-modal .field-editor textarea,.backlog-modal .field-editor select{display:block;width:100%;margin:12px 0 6px;line-height:1.6;resize:vertical}
+:is(.backlog-root,.backlog-modal) .modal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.backlog-modal .conflict pre{padding:12px;background:#fff;white-space:pre-wrap;border:1px solid #dde1e6}
+.backlog-modal .section-tools{display:flex;justify-content:flex-end;margin:15px 0;font-size:12px;color:#626b77}
+.backlog-modal .section-tools label{display:flex;align-items:center;gap:10px}
+.backlog-modal .modal-body{max-width:76ch;margin:auto;line-height:1.75;font-size:15px}
+.backlog-modal .markdown{overflow-wrap:anywhere}
+.backlog-modal .markdown h1{font-size:25px;margin:26px 0 12px}
+.backlog-modal .markdown h2{font-size:20px;font-weight:650;margin:28px 0 12px;border-bottom:1px solid #e9ecf0;padding-bottom:7px}
+.backlog-modal .markdown h3{font-size:17px;margin:22px 0 10px}
+.backlog-modal .markdown p{margin:12px 0}
+.backlog-modal .markdown ul,.backlog-modal .markdown ol{padding-left:25px;margin:12px 0;list-style:revert}
+.backlog-modal .markdown li{margin:4px 0}
+.backlog-modal .markdown .task-list-item{list-style:none}
+.backlog-modal .markdown input[type=checkbox]{accent-color:#235dc1;margin-right:7px}
+.backlog-modal .markdown a{color:#235dc1;text-decoration:underline;text-underline-offset:3px}
+.backlog-modal .markdown blockquote{border-left:3px solid #c8d4e6;color:#626b77;margin:15px 0;padding:1px 18px}
+.backlog-modal .markdown pre{overflow:auto;background:#f5f6f8;padding:16px;border:1px solid #e6e9ed;border-radius:6px;font-size:13px;line-height:1.6}
+.backlog-modal .markdown code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;background:#f5f6f8;padding:2px 4px;border-radius:3px}
+.backlog-modal .markdown pre code{padding:0;background:transparent}
+.backlog-modal .markdown table{border-collapse:collapse;display:block;overflow:auto;margin:18px 0;font-size:14px}
+.backlog-modal .markdown td,.backlog-modal .markdown th{border:1px solid #dde1e6;padding:8px 12px;text-align:left}
+.backlog-modal .markdown th{background:#f5f6f8}
+.backlog-modal .hljs-keyword,.backlog-modal .hljs-selector-tag{color:#8b3591}.backlog-modal .hljs-string,.backlog-modal .hljs-attr{color:#276546}.backlog-modal .hljs-number,.backlog-modal .hljs-literal{color:#98501d}.backlog-modal .hljs-title,.backlog-modal .hljs-function{color:#235dc1}.backlog-modal .hljs-comment{color:#687580}
+@media(max-width:1050px){.backlog-root{grid-template-columns:80px minmax(0,1fr) 175px}.backlog-root .board-area{padding:18px 14px 0}.backlog-root .section-nav{padding:20px 7px}.backlog-root .section-nav strong{font-size:12px}.backlog-root .controls{font-size:12px}}
+@media(max-width:720px){.backlog-root{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.backlog-root .section-nav{display:none}.backlog-root .project-rail{grid-row:1;display:flex;gap:6px;padding:10px;overflow-x:auto;border-bottom:1px solid #dde1e6;border-left:0}.backlog-root .rail-heading{display:none}.backlog-root .project-row{width:auto;flex-shrink:0;white-space:nowrap;margin:0;padding:7px 10px}.backlog-root .board-area{grid-row:2}.backlog-root .toolbar h1{font-size:20px}.backlog-root .toolbar p{max-width:230px}.backlog-root .connection{font-size:11px}.backlog-modal{width:calc(100vw - 16px);max-height:calc(100vh - 20px)}.backlog-modal .task-modal{padding:20px 16px}.backlog-modal .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.backlog-modal .modal-header h2{font-size:22px}}
+
+.backlog-root .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.backlog-root .task-card{padding:15px;border-radius:9px;margin-bottom:11px}
+.backlog-root .task-card h3{font-weight:600;margin:10px 0 7px;line-height:1.45}
+.backlog-root .card-description{font-size:12px;line-height:1.55;color:#6a7481;margin:0 0 11px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.backlog-root .priority-badge{font-size:11px;line-height:1.2;padding:4px 7px;border-radius:4px;background:#f1f4f8;color:#526279;text-transform:capitalize}
+.backlog-root .priority-badge[data-priority=high]{background:#fff0eb;color:#a34d35}
+.backlog-root .priority-badge[data-priority=medium]{background:#fff7df;color:#80641c}
+.backlog-root .priority-badge[data-priority=low]{background:#eaf6f3;color:#397065}
+.backlog-root .card-tags{margin:10px 0 14px;gap:5px}
+.backlog-root .card-tags span{font-size:11px;padding:3px 7px;background:#eef2f8;color:#546785;border-radius:4px}
+.backlog-root .card-progress{margin:14px 0}
+.backlog-root .card-progress>div{display:flex;justify-content:space-between;font-size:11px;color:#737d89;margin-bottom:6px;gap:6px}
+:is(.backlog-root,.backlog-modal) progress{display:block;width:100%;height:5px;border:none;border-radius:6px;overflow:hidden;appearance:none;background:#edf1f5;color:#3b8090}
+:is(.backlog-root,.backlog-modal) progress::-webkit-progress-bar{background:#edf1f5;border-radius:6px}
+:is(.backlog-root,.backlog-modal) progress::-webkit-progress-value{background:#3b8090;border-radius:6px}
+:is(.backlog-root,.backlog-modal) progress::-moz-progress-bar{background:#3b8090;border-radius:6px}
+.backlog-root .card-footer{border-top:1px solid #edf0f3;padding-top:11px;min-height:32px}
+.backlog-root .card-people{display:flex;align-items:center;gap:7px;min-width:0}
+.backlog-root .avatar-stack{display:flex;padding-left:3px;flex-shrink:0}
+:is(.backlog-root,.backlog-modal) .person-avatar{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:650;color:#516879;background:#e9eff4;border:2px solid #fff;flex-shrink:0}
+.backlog-root .avatar-stack .person-avatar{margin-left:-3px}
+.backlog-root .assignee-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.backlog-root .subtask-count{font-size:10px;color:#6b7581;white-space:nowrap}
+.backlog-root .card-issue{font-size:11px;color:#924c20;margin-top:8px}
+.backlog-modal .subtasks-panel{margin:22px 0;border:1px solid #e1e6ed;border-radius:8px;overflow:hidden}
+.backlog-modal .subtasks-panel>header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 16px;background:#fafbfd;border-bottom:1px solid #e1e6ed}
+.backlog-modal .subtasks-panel h3{font-size:15px;font-weight:600;margin:0}
+.backlog-modal .subtasks-panel h3>span{font-size:11px;font-weight:500;border-radius:4px;background:#eaf0f5;color:#626b77;padding:2px 6px;margin-left:6px}
+.backlog-modal .subtasks-panel>header>div{font-size:11px;color:#626b77;width:145px}
+.backlog-modal .subtasks-panel progress{margin-top:5px;height:4px}
+.backlog-modal .subtask-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-bottom:1px solid #edf0f3;border-radius:0;padding:13px 16px;white-space:normal}
+.backlog-modal .subtask-row:last-child{border-bottom:0}
+.backlog-modal .subtask-check{display:flex;align-items:center;justify-content:center;width:16px;height:16px;border:1px solid #cbd3dd;border-radius:50%;flex-shrink:0;background:white}
+.backlog-modal .subtask-check.checked{background:#e7f3ef;border-color:#abcfc3;color:#347662}
+.backlog-modal .subtask-check svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.backlog-modal .subtask-identity{display:flex;align-items:baseline;gap:10px;flex:1;min-width:0}
+.backlog-modal .subtask-identity>span{font-size:11px;color:#77818d;flex-shrink:0}
+.backlog-modal .subtask-identity strong{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.backlog-modal .subtask-status{font-size:10px;padding:3px 7px;border-radius:4px;background:#eef3fa;color:#526a8e;white-space:nowrap}
+.backlog-modal .subtask-status[data-done=true]{background:#eaf5ee;color:#3d7650}
+.backlog-modal .parent-task-link{font-size:12px;color:#626b77;white-space:normal;text-align:left;margin-bottom:10px}
+.backlog-modal .parent-task-link span{color:#235dc1;margin:0 6px}
+.backlog-modal .markdown .contains-task-list{padding:0;list-style:none;border:1px solid #e1e6ed;border-radius:8px;overflow:hidden;margin:16px 0}
+.backlog-modal .markdown .task-list-item{padding:11px 14px;margin:0;border-bottom:1px solid #edf0f3;background:#fff;font-size:14px;line-height:1.55;display:block;position:relative;padding-left:40px}
+.backlog-modal .markdown .task-list-item:last-child{border-bottom:0}
+.backlog-modal .markdown .task-list-item>input{margin:0;position:absolute;left:14px;top:15px;accent-color:#3b8090}
+@media(max-width:720px){.backlog-modal .subtask-identity{display:flex;flex-direction:column;gap:3px}.backlog-modal .subtask-row{gap:8px;padding:12px}.backlog-modal .subtasks-panel>header{padding:12px;gap:10px}.backlog-modal .subtasks-panel>header>div{width:110px}}
+
+:is(.backlog-root,.backlog-modal) .assignee-provider-icon{width:14px;height:14px;display:block;flex-shrink:0}
+
+.backlog-modal .detail-assignees,.backlog-modal .detail-assignees>span{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
