@@ -59,12 +59,17 @@
 .backlog-root .folder-settings p{color:#626b77;font-size:12px;margin-top:8px}
 .backlog-modal{border:1px solid #dde1e6;border-radius:12px;padding:0;width:min(920px,calc(100vw - 40px));max-width:920px;max-height:calc(100vh - 50px);margin:auto;box-shadow:0 20px 70px #20252b33;overflow:auto}
 .backlog-modal::backdrop{background:rgb(32 37 43 / 35%)}
-.backlog-modal .task-modal{padding:30px 36px 38px}
-.backlog-modal .modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding-bottom:23px;border-bottom:1px solid #dde1e6}
+.backlog-modal .task-modal{padding:28px 36px 38px}
+.backlog-modal .modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding-bottom:18px;border-bottom:1px solid #dde1e6}
 .backlog-modal .modal-header h2{font-size:25px;font-weight:650;letter-spacing:-.4px;line-height:1.3;margin:8px 0 0;overflow-wrap:anywhere}
-.backlog-modal .detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 24px;padding:6px 0 3px;border-bottom:1px solid #dde1e6;margin:0 0 19px}
+.backlog-modal .task-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);gap:34px;align-items:start;margin-top:24px}
+.backlog-modal .task-content-column{min-width:0}
+.backlog-modal .task-properties{min-width:0;padding-left:24px;border-left:1px solid #eef0f3}
+.backlog-modal .primary-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px;padding:4px 0 7px;border-bottom:1px solid #dde1e6;margin:0 0 22px}
+.backlog-modal .primary-summary .detail-property{padding:11px 0 10px;border-bottom:0}
+.backlog-modal .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;padding:4px 0 3px;margin:0}
 .backlog-modal .detail-property{min-width:0;padding:15px 0 16px;border-bottom:1px solid #eef0f3}
-.backlog-modal .detail-property:nth-last-child(-n+3){border-bottom:0}
+.backlog-modal .detail-grid .detail-property:nth-last-child(-n+2){border-bottom:0}
 .backlog-modal dt{font-size:11px;color:#626b77;display:flex;align-items:center;gap:6px;min-width:0;letter-spacing:.01em}
 .backlog-modal dd{margin:6px 0 0;padding-left:20px;font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap;min-height:20px}
 .backlog-modal .property-icon{width:13px;height:13px;fill:none;stroke:#7c8794;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.6;flex-shrink:0}
@@ -96,9 +101,10 @@
 .backlog-modal .field-editor textarea,.backlog-modal .field-editor select{display:block;width:100%;margin:12px 0 6px;line-height:1.6;resize:vertical}
 :is(.backlog-root,.backlog-modal) .modal-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .backlog-modal .conflict pre{padding:12px;background:#fff;white-space:pre-wrap;border:1px solid #dde1e6}
-.backlog-modal .section-tools{display:flex;justify-content:flex-end;margin:15px 0;font-size:12px;color:#626b77}
+.backlog-modal .section-tools{display:flex;justify-content:flex-end;margin:0 auto 16px;max-width:76ch;font-size:12px;color:#626b77}
 .backlog-modal .section-tools label{display:flex;align-items:center;gap:10px}
-.backlog-modal .modal-body{max-width:76ch;margin:auto;line-height:1.75;font-size:15px}
+.backlog-modal .modal-content{max-width:76ch;margin:0 auto 24px;line-height:1.75;font-size:15px}
+.backlog-modal .modal-content .markdown h2:first-child{margin-top:8px}
 .backlog-modal .markdown{overflow-wrap:anywhere}
 .backlog-modal .markdown h1{font-size:25px;margin:26px 0 12px}
 .backlog-modal .markdown h2{font-size:20px;font-weight:650;margin:28px 0 12px;border-bottom:1px solid #e9ecf0;padding-bottom:7px}
@@ -172,3 +178,21 @@
 :is(.backlog-root,.backlog-modal) .assignee-provider-icon{width:14px;height:14px;display:block;flex-shrink:0}
 
 .backlog-modal .detail-assignees,.backlog-modal .detail-assignees>span{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.backlog-modal .task-details{margin:18px 0 0;padding:0}
+.backlog-modal .task-details-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.backlog-modal .task-details-heading h3{font-size:13px;font-weight:650;letter-spacing:.01em;margin:0;text-transform:uppercase}
+.backlog-modal .task-details-heading span{font-size:11px;color:#7b8591}
+.backlog-modal .task-details .detail-property{padding:12px 0 13px}
+.backlog-modal .task-properties .primary-summary{display:block;padding:0;margin:0;border-bottom:0}
+.backlog-modal .task-properties .primary-summary .detail-property{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid #eef0f3}
+.backlog-modal .task-properties .detail-grid{grid-template-columns:1fr;gap:0}
+.backlog-modal .task-properties .task-details{margin-top:8px}
+@media(max-width:720px){
+ .backlog-modal .task-layout{grid-template-columns:1fr;gap:20px;margin-top:20px}
+ .backlog-modal .task-properties{grid-row:1;padding:0 0 4px;border-left:0;border-bottom:1px solid #dde1e6}
+ .backlog-modal .task-content-column{grid-row:2}
+ .backlog-modal .primary-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+ .backlog-modal .detail-grid{grid-template-columns:1fr;gap:0}
+ .backlog-modal .detail-grid .detail-property:nth-last-child(-n+2){border-bottom:1px solid #eef0f3}
+ .backlog-modal .detail-grid .detail-property:last-child{border-bottom:0}
+}

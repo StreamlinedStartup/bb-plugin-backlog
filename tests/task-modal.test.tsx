@@ -24,6 +24,12 @@ test("task identity is concise and timestamps are read-only properties", () => {
  expect(view.getByText("T-1 / active")).toBeTruthy();
  expect(view.container.querySelectorAll(".task-id")).toHaveLength(1);
  expect(view.container.textContent?.match(/T-1/g)).toHaveLength(1);
+ expect(view.getByRole("button", { name: "Edit status" })).toBeTruthy();
+ expect(view.getByRole("button", { name: "Edit priority" })).toBeTruthy();
+ expect(view.getByRole("button", { name: "Edit assignees" })).toBeTruthy();
+ expect(view.getByRole("button", { name: "Edit due date" })).toBeTruthy();
+ expect(view.queryByText("Labels")).toBeNull();
+ expect(view.getByText("Task details")).toBeTruthy();
  expect(view.getByText("Created")).toBeTruthy();
  expect(view.getByText("2026-09-16 08:30")).toBeTruthy();
  expect(view.getByText("Updated")).toBeTruthy();
@@ -32,6 +38,45 @@ test("task identity is concise and timestamps are read-only properties", () => {
  expect(view.queryByLabelText("Edit created date")).toBeNull();
  expect(view.queryByLabelText("Edit updated date")).toBeNull();
  expect(view.container.querySelector(".property-icon")).toBeTruthy();
+});
+test("task content leads and secondary properties use a quieter details section", () => {
+ const detailed = { ...task, fields: { ...task.fields, priority: "High", labels: ["frontend"] }, body: "## Description\nReadable task content\n\n## Implementation Plan\nShip the layout" };
+ const view = render(<TaskModal task={detailed} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task: detailed, conflict: false, message: "" })} />);
+ const content = view.getByLabelText("Task content");
+ expect(content.textContent).toContain("Readable task content");
+ expect(view.getByText("High")).toBeTruthy();
+ const label = view.getByText("frontend");
+ expect(label.closest(".task-details")).toBeTruthy();
+ const primary = view.container.querySelector(".primary-summary");
+ const details = view.container.querySelector(".task-details");
+ const properties = view.container.querySelector(".task-properties");
+ const layout = view.container.querySelector(".task-layout");
+ expect(primary).toBeTruthy();
+ expect(details).toBeTruthy();
+ expect(properties?.contains(primary)).toBe(true);
+ expect(properties?.contains(details)).toBe(true);
+ expect(layout?.querySelector(".task-content-column")?.contains(content)).toBe(true);
+ if (primary && details) expect(primary.compareDocumentPosition(details) & 4).toBeTruthy();
+ expect(view.queryByText("More properties")).toBeNull();
+ expect(view.getByText("frontend")).toBeTruthy();
+ expect(view.getByText("Task details")).toBeTruthy();
+});
+test("section picker only adds missing sections and existing Markdown headings edit in place", async () => {
+ const sectionTask = parseTask("---\nid: T-1\ntitle: Original\nstatus: To Do\n---\n## Description\nOriginal copy\n", { path: "task.md", revision: "r", storage: "active" });
+ let saved: Edit[] = [];
+ const view = render(<TaskModal task={sectionTask} statuses={["To Do"]} onClose={() => undefined} onSave={async edits => {
+  saved = edits;
+  return { task: { ...sectionTask, body: "## Description\nUpdated **Markdown**", sections: { description: "Updated **Markdown**" } }, conflict: false, message: "" };
+ }} />);
+ const picker = view.getByLabelText("Add task section") as HTMLSelectElement;
+ expect(Array.from(picker.options).map(option => option.value)).not.toContain("description");
+ expect(Array.from(picker.options).map(option => option.value)).toContain("implementation plan");
+ expect(view.getByLabelText("Task content").compareDocumentPosition(view.container.querySelector(".section-tools")!) & 4).toBeTruthy();
+ fireEvent.doubleClick(view.getByRole("button", { name: "Edit description" }));
+ fireEvent.change(view.getByLabelText("Draft"), { target: { value: "Updated **Markdown**" } });
+ fireEvent.click(view.getByText("Save changes"));
+ await waitFor(() => expect(saved[0]?.kind).toBe("section"));
+ expect(view.getByText("Markdown").tagName).toBe("STRONG");
 });
 test("editing is discoverable without repeating visible Edit controls", () => {
  const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
