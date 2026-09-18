@@ -5,6 +5,8 @@ import type { rpcContract } from "./src/contract";
 import type { Board, Edit, Project, Task } from "./src/model";
 import TaskModal from "./src/TaskModal";
 import TaskCard from "./src/TaskCard";
+import BoardControls from "./src/BoardControls";
+import { selectBoardTasks, type BoardFilters } from "./src/board-controls";
 import { childTasks } from "./src/task-relations";
 import "./app.css";
 const STORAGE = { active: "Active tasks", completed: "Completed storage", archived: "Archived tasks", all: "All storage" };
@@ -52,6 +54,7 @@ export function Page() {
  const [query, setQuery] = useState("");
  const [storage, setStorage] = useState("active");
  const [hideDone, setHideDone] = useState(false);
+ const [boardFilters, setBoardFilters] = useState<BoardFilters>({ status: [], priority: [], assignee: "", labels: [], sort: "ordinal", direction: "asc" });
  const [modal, setModal] = useState<Task | null>(null);
  const [settings, setSettings] = useState(false);
  const [actionError, setActionError] = useState("");
@@ -61,7 +64,11 @@ export function Page() {
  const project = projects.find(item => item.id === selected);
  const statuses = board?.statuses ?? [];
  const doneStatus = statuses.at(-1);
- const items = useMemo(() => board?.tasks.filter(task => (storage === "all" || task.storage === storage) && (!hideDone || task.status !== doneStatus) && `${task.id} ${task.title} ${task.body} ${JSON.stringify(task.fields)}`.toLowerCase().includes(query.toLowerCase())) ?? [], [board, storage, hideDone, doneStatus, query]);
+ const filterOptions = useMemo(() => {
+  const tasks = board?.tasks ?? [];
+  return { statuses: [...new Set([...statuses, ...tasks.map(task => task.status)])], priorities: [...new Set(tasks.map(task => String(task.fields.priority ?? "")).filter(Boolean))].sort(), assignees: [...new Set(tasks.flatMap(task => Array.isArray(task.fields.assignee) ? task.fields.assignee.map(String) : task.fields.assignee ? [String(task.fields.assignee)] : []))].sort(), labels: [...new Set(tasks.flatMap(task => Array.isArray(task.fields.labels) ? task.fields.labels.map(String) : []))].sort() };
+ }, [board, statuses]);
+ const items = useMemo(() => selectBoardTasks(board?.tasks.filter(task => (storage === "all" || task.storage === storage) && (!hideDone || task.status !== doneStatus) && `${task.id} ${task.title} ${task.body} ${JSON.stringify(task.fields)}`.toLowerCase().includes(query.toLowerCase())) ?? [], boardFilters), [board, storage, hideDone, doneStatus, query, boardFilters]);
  const laneStatuses = [...statuses, ...new Set(items.map(task => task.status).filter(status => !statuses.includes(status)))];
  const move = async (task: Task, status: string, beforePath: string | null) => {
   if (!board?.sourceId || !board.folder || moving) return;
@@ -86,6 +93,7 @@ export function Page() {
   <aside className="section-nav" aria-label="Backlog sections"><strong>Backlog</strong><button className="section-link active" aria-current="page">Tasks</button></aside>
   <main className="board-area"><header className="toolbar"><div><h1>{project?.name ?? "Backlog"}</h1><p>{board?.folder ?? "Markdown tasks across your projects"}</p></div><span className="connection">{moving ? "Saving move..." : connection === "connected" ? "Live updates" : "Reconnecting"}</span></header>
    <div className="controls"><input aria-label="Search tasks" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tasks" /><select aria-label="Task storage" value={storage} onChange={event => setStorage(event.target.value)}>{Object.entries(STORAGE).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select><label className="completed-toggle"><input type="checkbox" checked={hideDone} onChange={event => setHideDone(event.target.checked)} />Hide {doneStatus || "completed"}</label><button disabled={!project} onClick={() => setSettings(!settings)}>Folder settings</button><button onClick={() => void load()}>Refresh</button></div>
+   {board && <BoardControls filters={boardFilters} options={filterOptions} setFilters={setBoardFilters} />}
    {settings && project && <FolderSettings key={project.id} project={project} rpc={rpc} saved={load} close={() => setSettings(false)} />}
    {(error || actionError) && <p role="alert" className="notice error">{error || actionError}</p>}
    {board?.warnings.map((warning, index) => <p className="notice" key={index}>{warning}</p>)}

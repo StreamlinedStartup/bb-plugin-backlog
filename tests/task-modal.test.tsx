@@ -33,6 +33,7 @@ test("task identity is concise and timestamps are read-only properties", () => {
  expect(view.getByText("Created")).toBeTruthy();
  expect(view.getByText("2026-09-16 08:30")).toBeTruthy();
  expect(view.getByText("Updated")).toBeTruthy();
+ expect(view.queryByText("Additional context")).toBeNull();
  expect(view.getByText("2026-09-17 14:45")).toBeTruthy();
  expect(view.queryByText("Identity and additional fields")).toBeNull();
  expect(view.queryByLabelText("Edit created date")).toBeNull();

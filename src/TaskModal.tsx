@@ -230,7 +230,7 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
     <aside className="task-properties" aria-label="Task properties">
      <dl className="primary-summary" aria-label="Task summary">{primaryProperties.map(renderProperty)}</dl>
      {secondaryProperties.length > 0 && <section className="task-details" aria-labelledby="task-details-heading">
-      <div className="task-details-heading"><h3 id="task-details-heading">Task details</h3><span>Additional context</span></div>
+      <div className="task-details-heading"><h3 id="task-details-heading">Task details</h3></div>
       <dl className="detail-grid">{secondaryProperties.map(renderProperty)}</dl>
      </section>}
     </aside>

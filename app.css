@@ -19,6 +19,23 @@
 .backlog-root .controls>input{flex:1;min-width:130px;max-width:400px}
 .backlog-root .completed-toggle{font-size:12px;display:flex;align-items:center;gap:5px;color:#626b77}
 .backlog-root .completed-toggle input{accent-color:#235dc1}
+.backlog-root .board-filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 16px;padding:9px 11px;border:1px solid #dde1e6;border-radius:8px;background:#fcfcfd}
+.backlog-root .board-filters-label{font-size:12px;color:#626b77;margin-right:2px}
+.backlog-root .filter-menu{position:relative}
+.backlog-root .filter-trigger{list-style:none;display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:6px 9px;border:1px solid transparent;border-radius:5px;color:#20252b;cursor:pointer;font-size:12px}
+.backlog-root .filter-trigger::-webkit-details-marker{display:none}
+.backlog-root .filter-trigger::after{content:"";width:6px;height:6px;margin-left:3px;margin-top:-3px;border-right:1.5px solid #737e8a;border-bottom:1.5px solid #737e8a;transform:rotate(45deg);flex:0 0 auto}
+.backlog-root .filter-menu[open] .filter-trigger,.backlog-root .filter-trigger:hover{background:#edf3fc;border-color:#c7d7ee;color:#235dc1}
+.backlog-root .filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#235dc1;color:#fff;font-size:10px;font-weight:650}
+.backlog-root .filter-popover{position:absolute;z-index:5;top:calc(100% + 5px);left:0;min-width:170px;max-width:240px;padding:6px;border:1px solid #cfd6df;border-radius:6px;background:#fff;box-shadow:0 8px 20px #20252b1f}
+.backlog-root .filter-option{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;font-size:12px;color:#20252b;cursor:pointer;white-space:nowrap}
+.backlog-root .filter-option:hover{background:#f1f4f8}
+.backlog-root .filter-option input{accent-color:#235dc1}
+.backlog-root .filter-empty{display:block;padding:7px 8px;color:#737e8a;font-size:12px}
+.backlog-root .sort-control{display:flex;align-items:center;gap:7px;margin-left:auto;font-size:12px;color:#626b77}
+.backlog-root .sort-control select{min-height:32px;min-width:112px}
+.backlog-root .reset-filters{min-height:32px}
+.backlog-root :is(button,input,select):focus-visible{outline:2px solid #235dc1;outline-offset:2px}
 .backlog-root .lanes{display:flex;gap:14px;align-items:stretch;overflow:auto;flex:1;min-height:220px;padding-bottom:20px}
 .backlog-root .lane{width:270px;min-width:250px;flex:1 0 250px;max-width:340px;background:#f5f6f8;border-radius:8px;align-self:flex-start;min-height:260px;border:1px solid #e8ebef}
 .backlog-root .lane>header{display:flex;justify-content:space-between;align-items:center;padding:14px 13px 10px}
