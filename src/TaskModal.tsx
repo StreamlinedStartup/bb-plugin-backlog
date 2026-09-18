@@ -1,5 +1,5 @@
 import AssigneeAvatar from "./AssigneeAvatar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { editSchema, type Edit, type FieldValue, type Task } from "./model";
 import { editableSectionLabels, fieldLabels, listFields } from "./task-format";
 import Markdown from "./Markdown";
@@ -16,6 +16,26 @@ const inputValue = (value: unknown) => {
  if (value === null || value === undefined) return "";
  return String(value);
 };
+const pathKeys = new Set(["references", "documentation", "modified_files"]);
+const valueList = (value: unknown): string[] => {
+ if (Array.isArray(value)) return value.map(String).filter(Boolean);
+ if (value === null || value === undefined || value === "") return [];
+ return [String(value)];
+};
+const shortenPath = (value: string) => {
+ if (value.length <= 44 || !value.includes("/")) return value;
+ const parts = value.split("/").filter(Boolean);
+ return parts.length > 1 ? `…/${parts.slice(-2).join("/")}` : `…${value.slice(-41)}`;
+};
+const stateValue = (value: unknown) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function PropertyList({ name, value }: { name: string; value: unknown }) {
+ const values = valueList(value);
+ if (!values.length) return <>Not set</>;
+ return <span className="property-list">{values.map((item, index) => {
+  const path = pathKeys.has(name) || item.includes("/");
+  return <span className="property-chip" key={`${item}-${index}`} title={path ? item : undefined} aria-label={path ? item : undefined}>{path ? shortenPath(item) : item}</span>;
+ })}</span>;
+}
 const propertyIcons: Record<string, string> = {
  status: "M4 7h16M4 12h10M4 17h16",
  type: "M4 5h16v14H4z",
@@ -118,9 +138,12 @@ const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "ti
   if (draft || pending || recovery) { setError("Save or cancel your edit before opening another task."); return; }
   onOpenTask?.(task);
  };
+ const activateEdit = (event: KeyboardEvent, key: string) => {
+  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); start("field", key); }
+ };
  return <dialog ref={dialog} className="backlog-modal" aria-labelledby="task-modal-title" onCancel={event => { event.preventDefault(); if (pending) return; if (draft) cancel(); else onClose(); }}>
   <div className="task-modal">
-   <header className="modal-header"><div><span className="task-id">{current.id} / {current.storage}</span><h2 id="task-modal-title" onDoubleClick={() => start("field", "title")}>{current.title}<button className="inline-edit" onClick={() => start("field", "title")} aria-label="Edit title">Edit</button></h2></div><button onClick={close} aria-label="Close task">Close</button></header>
+   <header className="modal-header"><div><span className="task-id">{current.id} / {current.storage}</span><h2 id="task-modal-title" role="button" tabIndex={0} aria-label="Edit title" onKeyDown={event => activateEdit(event, "title")} onDoubleClick={() => start("field", "title")}>{current.title}</h2></div><button onClick={close} aria-label="Close task">Close</button></header>
    {recovery && <section className="notice error"><h3>Saved draft recovery</h3><pre>{recovery}</pre><button onClick={() => setRecovery(null)}>Discard unreadable saved draft</button></section>}
    {missing && <p role="alert" className="notice error">This task is no longer in the current snapshot. Your draft is still here. Check whether the file moved or the source is unavailable.</p>}
    {current.errors.map((text, i) => <p className="notice error" key={i}>{text}</p>)}
@@ -128,7 +151,9 @@ const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "ti
     const readOnly = isReadOnlyProperty(key);
     const value = current.fields[key];
     const stateClass = key === "status" || key === "priority" ? `property-value-${key}` : "";
-    return <div className={`detail-property${readOnly ? " read-only" : ""}`} key={key} onDoubleClick={() => !readOnly && start("field", key)}><dt><PropertyIcon name={key} /><span>{label}</span>{!readOnly && <button className="inline-edit" aria-label={`Edit ${label.toLowerCase()}`} onClick={() => start("field", key)}>Edit</button>}</dt><dd className={stateClass} data-value={key === "status" || key === "priority" ? String(value ?? "").toLowerCase() : undefined}>{key === "assignee" && assignees(current).length ? <span className="detail-assignees">{assignees(current).map(person => <span key={person}><AssigneeAvatar name={person} />{person}</span>)}</span> : display(value)}</dd></div>;
+    const editable = !readOnly;
+    const renderedValue = key === "assignee" && assignees(current).length ? <span className="detail-assignees">{assignees(current).map(person => <span key={person}><AssigneeAvatar name={person} />{person}</span>)}</span> : listFields.has(key) ? <PropertyList name={key} value={value} /> : key === "status" || key === "priority" ? <span className={`property-badge ${stateClass}`} data-state={stateValue(value)}>{display(value)}</span> : display(value);
+    return <div className={`detail-property${readOnly ? " read-only" : ""}`} data-editable={editable ? "true" : undefined} key={key} role={editable ? "button" : undefined} tabIndex={editable ? 0 : undefined} aria-label={editable ? `Edit ${label.toLowerCase()}` : undefined} onKeyDown={editable ? event => activateEdit(event, key) : undefined} onDoubleClick={editable ? () => start("field", key) : undefined}><dt><PropertyIcon name={key} /><span>{label}</span></dt><dd className="property-value">{renderedValue}</dd></div>;
    })}</dl>
    {parent && <button className="parent-task-link" onClick={() => openRelated(parent)}>Parent task <span>{parent.id}</span> {parent.title}</button>}
    {children.length > 0 && <section className="subtasks-panel" aria-label="Subtasks">

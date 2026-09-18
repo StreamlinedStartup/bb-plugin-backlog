@@ -70,12 +70,18 @@
 .backlog-modal .property-icon{width:13px;height:13px;fill:none;stroke:#7c8794;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.6;flex-shrink:0}
 .backlog-modal .detail-property.read-only dd{color:#626b77}
 .backlog-modal .property-value-status,.backlog-modal .property-value-priority{font-weight:550}
-.backlog-modal .property-value-status[data-value*=done],.backlog-modal .property-value-status[data-value*=complete]{color:#397056}
-.backlog-modal .property-value-status[data-value*=progress]{color:#526a8e}
-.backlog-modal .property-value-priority[data-value=high]{color:#a34d35}
-.backlog-modal .property-value-priority[data-value=medium]{color:#80641c}
-.backlog-modal .property-value-priority[data-value=low]{color:#397065}
-.backlog-modal .inline-edit{font-size:11px;font-weight:400;letter-spacing:0;color:#626b77;padding:2px 5px;border:0;background:transparent;margin-left:5px;vertical-align:middle}
+.backlog-modal .detail-property[data-editable=true]{cursor:text}
+.backlog-modal .detail-property[data-editable=true]:hover{background:#fafbfd}
+.backlog-modal .detail-property[data-editable=true]:focus-visible,.backlog-modal .modal-header h2[role=button]:focus-visible,.backlog-modal .markdown h2[role=button]:focus-visible{outline:2px solid #235dc1;outline-offset:3px;border-radius:3px}
+.backlog-modal .property-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-weight:550;background:#f1f4f8;color:#526279}
+.backlog-modal .property-badge.property-value-status[data-state=done],.backlog-modal .property-badge.property-value-status[data-state=complete]{background:#eaf5ee;color:#397056}
+.backlog-modal .property-badge.property-value-status[data-state=in-progress]{background:#eef3fa;color:#526a8e}
+.backlog-modal .property-badge.property-value-priority[data-state=high]{background:#fff0eb;color:#a34d35}
+.backlog-modal .property-badge.property-value-priority[data-state=medium]{background:#fff7df;color:#80641c}
+.backlog-modal .property-badge.property-value-priority[data-state=low]{background:#eaf6f3;color:#397065}
+.backlog-modal .property-list{display:flex;flex-wrap:wrap;gap:5px 6px;padding:0}
+.backlog-modal .property-chip{display:inline-block;max-width:100%;padding:3px 7px;border:1px solid #e1e6ed;border-radius:4px;background:#fafbfd;color:#4f5b68;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.backlog-modal .detail-property[data-editable=true] .property-chip:hover{border-color:#b8c5d9;background:#f2f5fa}
 .backlog-modal .field-editor{padding:18px;border:1px solid #b6c9e6;border-radius:8px;background:#f8faff;margin:18px 0}
 .backlog-modal .editor-heading h3{font-size:16px;margin:0 0 3px}
 .backlog-modal .editor-heading span{font-size:12px;color:#626b77}

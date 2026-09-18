@@ -7,7 +7,8 @@ export default function Markdown({ children, onEditSection, editable = [] }: { c
   img: ({ alt }) => <span className="image-placeholder">Image: {alt || "Untitled"}</span>,
   h2: ({ children }) => {
    const key = String(children).replace(/\s*\(Optional\)$/i, "").toLowerCase();
-   return <h2 onDoubleClick={() => editable.includes(key) && onEditSection?.(key)}>{children}{onEditSection && editable.includes(key) && <button className="inline-edit" onClick={() => onEditSection(key)} aria-label={`Edit ${key}`}>Edit</button>}</h2>;
+   const canEdit = onEditSection && editable.includes(key);
+   return <h2 role={canEdit ? "button" : undefined} tabIndex={canEdit ? 0 : undefined} aria-label={canEdit ? `Edit ${key}` : undefined} onKeyDown={event => { if (canEdit && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onEditSection(key); } }} onDoubleClick={() => canEdit && onEditSection(key)}>{children}</h2>;
   },
  }}>{children || "_No content yet._"}</ReactMarkdown></div>;
 }

@@ -32,17 +32,32 @@ test("task identity is concise and timestamps are read-only properties", () => {
  expect(view.queryByLabelText("Edit updated date")).toBeNull();
  expect(view.container.querySelector(".property-icon")).toBeTruthy();
 });
+test("editing is discoverable without repeating visible Edit controls", () => {
+ const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.queryAllByText("Edit")).toHaveLength(0);
+ fireEvent.keyDown(view.getByRole("button", { name: "Edit title" }), { key: "Enter" });
+ expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("Original");
+});
+test("list values become compact chips and long paths keep their full value on hover", () => {
+ const structured = { ...task, fields: { ...task.fields, labels: ["frontend", "enhancement"], references: ["/Users/vulture/projects/a/very/long/reference/file.md"] } };
+ const view = render(<TaskModal task={structured} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task: structured, conflict: false, message: "" })} />);
+ expect(view.getByText("frontend")).toBeTruthy();
+ const path = view.container.querySelector(".property-chip[title='/Users/vulture/projects/a/very/long/reference/file.md']");
+ expect(path).toBeTruthy();
+ expect(path?.textContent).not.toBe("/Users/vulture/projects/a/very/long/reference/file.md");
+ expect(path?.getAttribute("aria-label")).toBe("/Users/vulture/projects/a/very/long/reference/file.md");
+});
 test("external snapshots update previews without discarding the active draft", () => {
  const props = { statuses: ["To Do", "Done"], onClose: () => undefined, onSave: async () => ({ task, conflict: false, message: "" }) };
  const view = render(<TaskModal {...props} task={task} />);
- fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } });
+ fireEvent.doubleClick(view.getByText("Original")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } });
  view.rerender(<TaskModal {...props} task={{ ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title", status: "Done" } }} />);
  expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft"); expect(view.getByText("Agent title")).toBeTruthy(); expect(view.getByText("Done")).toBeTruthy();
 });
 test("save conflict preserves draft and requires explicit resolution", async () => {
  const current = { ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title" } };
  const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task: current, conflict: true, message: "Conflict: title changed on disk." })} />);
- fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } }); fireEvent.click(view.getByText("Save changes"));
+ fireEvent.doubleClick(view.getByText("Original")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } }); fireEvent.click(view.getByText("Save changes"));
  await waitFor(() => expect(view.getByText("Current file value")).toBeTruthy());
  expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft");
  expect((view.getByText("Save changes") as HTMLButtonElement).disabled).toBe(true);
@@ -51,7 +66,7 @@ test("save conflict preserves draft and requires explicit resolution", async () 
 test("Escape cancels the active edit before closing; close button never discards draft", () => {
  let closes = 0;
  const view = render(<TaskModal task={task} statuses={["To Do"]} onClose={() => { closes++; }} onSave={async () => ({ task, conflict: false, message: "" })} />);
- fireEvent.click(view.getByLabelText("Edit title")); fireEvent.click(view.getByLabelText("Close task")); expect(closes).toBe(0);
+ fireEvent.doubleClick(view.getByText("Original")); fireEvent.click(view.getByLabelText("Close task")); expect(closes).toBe(0);
  fireEvent(view.container.querySelector("dialog")!, new Event("cancel", { bubbles: false, cancelable: true }));
  expect(view.queryByLabelText("Draft")).toBeNull(); expect(closes).toBe(0);
  fireEvent(view.container.querySelector("dialog")!, new Event("cancel", { bubbles: false, cancelable: true })); expect(closes).toBe(1);
@@ -72,7 +87,7 @@ test("Backlog markers and HTML comments are hidden in rendered task prose", () =
 test("unsaved drafts survive unmount and reopening in the same session", () => {
  const props = { task, statuses: ["To Do"], onClose: () => undefined, onSave: async () => ({ task, conflict: false, message: "" }) };
  const view = render(<TaskModal {...props} />);
- fireEvent.click(view.getByLabelText("Edit title")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "Keep this draft" } });
+ fireEvent.doubleClick(view.getByText("Original")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "Keep this draft" } });
  view.unmount();
  const next = render(<TaskModal {...props} />);
  expect((next.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("Keep this draft");
