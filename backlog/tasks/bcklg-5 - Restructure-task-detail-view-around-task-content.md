@@ -1,7 +1,7 @@
 ---
 id: BCKLG-5
 title: Restructure task detail view around task content
-status: In Progress
+status: "Done"
 assignee:
   - '@codex'
 created_date: '2026-09-18 05:03'
@@ -17,7 +17,7 @@ modified_files:
   - tests/task-modal.test.tsx
 priority: medium
 type: enhancement
-ordinal: 6000
+ordinal: -24
 ---
 
 ## Description
@@ -34,7 +34,7 @@ The current modal still presents too many metadata properties as a dense grid. T
 - [x] #4 Labels, assignees, and status/priority values remain compact, scannable tokens with the existing light-only styling.
 - [x] #5 Description, implementation content, and related subtasks receive clear section hierarchy and comfortable reading width.
 - [x] #6 Inline double-click editing, keyboard activation, date picker, Save/Cancel, draft recovery, conflict protection, Markdown, custom sections, and linked subtasks remain functional.
-- [ ] #7 Focused tests, full mise verification, and fresh desktop and narrow live UI checks pass.
+- [x] #7 Focused tests, full mise verification, and fresh desktop and narrow live UI checks pass.
 <!-- AC:END -->
 
 ## Implementation Plan
