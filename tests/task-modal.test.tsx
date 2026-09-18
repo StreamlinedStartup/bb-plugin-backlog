@@ -9,7 +9,7 @@ HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); 
 const { render, fireEvent, cleanup, waitFor } = await import("@testing-library/react");
 const { default: TaskModal } = await import("../src/TaskModal");
 const { parseTask } = await import("../src/task-format");
-const task = parseTask("---\nid: T-1\ntitle: Original\nstatus: To Do\n---\n## Description\nHello **world**\n", { path: "task.md", revision: "r", storage: "active" });
+const task = parseTask("---\nid: T-1\ntitle: Original\nstatus: To Do\ncreated_date: 2026-09-16 08:30\nupdated_date: 2026-09-17 14:45\n---\n## Description\nHello **world**\n", { path: "task.md", revision: "r", storage: "active" });
 afterEach(() => { cleanup(); sessionStorage.clear(); });
 test("fields start in preview and double-click enables explicit editing", () => {
  const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
@@ -17,6 +17,20 @@ test("fields start in preview and double-click enables explicit editing", () => 
  fireEvent.doubleClick(view.getByText("Original"));
  expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("Original");
  fireEvent.click(view.getByText("Cancel edit")); expect(view.queryByLabelText("Draft")).toBeNull();
+});
+test("task identity is concise and timestamps are read-only properties", () => {
+ const view = render(<TaskModal task={task} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async () => ({ task, conflict: false, message: "" })} />);
+ expect(view.getByText("T-1 / active")).toBeTruthy();
+ expect(view.container.querySelectorAll(".task-id")).toHaveLength(1);
+ expect(view.container.textContent?.match(/T-1/g)).toHaveLength(1);
+ expect(view.getByText("Created")).toBeTruthy();
+ expect(view.getByText("2026-09-16 08:30")).toBeTruthy();
+ expect(view.getByText("Updated")).toBeTruthy();
+ expect(view.getByText("2026-09-17 14:45")).toBeTruthy();
+ expect(view.queryByText("Identity and additional fields")).toBeNull();
+ expect(view.queryByLabelText("Edit created date")).toBeNull();
+ expect(view.queryByLabelText("Edit updated date")).toBeNull();
+ expect(view.container.querySelector(".property-icon")).toBeTruthy();
 });
 test("external snapshots update previews without discarding the active draft", () => {
  const props = { statuses: ["To Do", "Done"], onClose: () => undefined, onSave: async () => ({ task, conflict: false, message: "" }) };

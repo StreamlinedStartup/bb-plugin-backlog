@@ -5,8 +5,37 @@ import { editableSectionLabels, fieldLabels, listFields } from "./task-format";
 import Markdown from "./Markdown";
 import { childTasks, parentTask, assignees } from "./task-relations";
 export type SaveResult = { task: Task; conflict: boolean; message: string };
-const display = (value: unknown) => value === null || value === undefined || value === "" ? "Not set" : Array.isArray(value) ? value.join(", ") || "Not set" : typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
-const inputValue = (value: unknown) => Array.isArray(value) ? value.join("\n") : value === null || value === undefined ? "" : String(value);
+const display = (value: unknown) => {
+ if (value === null || value === undefined || value === "") return "Not set";
+ if (Array.isArray(value)) return value.join(", ") || "Not set";
+ if (typeof value === "object") return JSON.stringify(value, null, 2);
+ return String(value);
+};
+const inputValue = (value: unknown) => {
+ if (Array.isArray(value)) return value.join("\n");
+ if (value === null || value === undefined) return "";
+ return String(value);
+};
+const propertyIcons: Record<string, string> = {
+ status: "M4 7h16M4 12h10M4 17h16",
+ type: "M4 5h16v14H4z",
+ priority: "M12 4l2.2 4.7 5.2.8-3.7 3.7.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.7-3.7 5.2-.8z",
+ assignee: "M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7a6 6 0 0 1 12 0",
+ reporter: "M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7a6 6 0 0 1 12 0",
+ labels: "M4 5h8l8 7-8 7H4z",
+ milestone: "M5 19V5m0 0h12l-2 4 2 4H5",
+ due_date: "M5 7h14v12H5zM8 4v6m8-6v6M5 11h14",
+ project: "M4 7h6l2 2h8v10H4z",
+ dependencies: "M8 12h8M10 8h2a4 4 0 0 1 0 8h-2M14 8h-2a4 4 0 0 0 0 8h2",
+ references: "M5 5h14v14H5zM8 9h8M8 13h5",
+ documentation: "M5 4h14v16H5zM8 8h8M8 12h8M8 16h5",
+ modified_files: "M5 4h14v16H5zM8 8h8M8 12h5",
+ created_date: "M5 5h14v14H5zM8 3v4m8-4v4M5 10h14",
+ updated_date: "M5 5h14v14H5zM8 3v4m8-4v4M5 10h14M12 13v3l2 1",
+};
+function PropertyIcon({ name }: { name: string }) {
+ return <svg className="property-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={propertyIcons[name] ?? propertyIcons.documentation} /></svg>;
+}
 interface Draft { kind: "field" | "section"; key: string; before: FieldValue; text: string; revision?: string }
 function restoreDraft(key: string): { draft: Draft | null; recovery: string | null; message: string } {
  let stored: string | null = null;
@@ -16,7 +45,10 @@ function restoreDraft(key: string): { draft: Draft | null; recovery: string | nu
   const candidate = JSON.parse(stored);
   const valid = editSchema.safeParse({ ...candidate, value: candidate.text });
   if (!valid.success || typeof candidate.text !== "string") throw new Error("Unrecognized draft format");
-  return { draft: { kind: valid.data.kind, key: valid.data.key, before: valid.data.before, text: candidate.text, revision: typeof candidate.revision === "string" ? candidate.revision : undefined }, recovery: null, message: "Recovered your unsaved draft from this browser session." };
+  let revision: string | undefined;
+  if (typeof candidate.revision === "string") revision = candidate.revision;
+  const draft = { kind: valid.data.kind, key: valid.data.key, before: valid.data.before, text: candidate.text, revision };
+  return { draft, recovery: null, message: "Recovered your unsaved draft from this browser session." };
  } catch {
   return { draft: null, recovery: stored, message: "Saved draft storage could not be read. Any stored text is retained below for recovery." };
  }
@@ -80,6 +112,8 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
  const children = childTasks(current, relatedTasks);
  const parent = parentTask(current, relatedTasks);
  const doneChildren = children.filter(child => child.status === statuses.at(-1)).length;
+const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "title" && key !== "ordinal"), ["created_date", "Created"], ["updated_date", "Updated"]] as Array<[string, string]>;
+ const isReadOnlyProperty = (key: string) => key === "created_date" || key === "updated_date";
  const openRelated = (task: Task) => {
   if (draft || pending || recovery) { setError("Save or cancel your edit before opening another task."); return; }
   onOpenTask?.(task);
@@ -90,7 +124,12 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
    {recovery && <section className="notice error"><h3>Saved draft recovery</h3><pre>{recovery}</pre><button onClick={() => setRecovery(null)}>Discard unreadable saved draft</button></section>}
    {missing && <p role="alert" className="notice error">This task is no longer in the current snapshot. Your draft is still here. Check whether the file moved or the source is unavailable.</p>}
    {current.errors.map((text, i) => <p className="notice error" key={i}>{text}</p>)}
-   <dl className="detail-grid">{Object.entries(fieldLabels).filter(([key]) => key !== "title" && key !== "ordinal").map(([key, label]) => <div key={key} onDoubleClick={() => start("field", key)}><dt>{label}<button className="inline-edit" aria-label={`Edit ${label.toLowerCase()}`} onClick={() => start("field", key)}>Edit</button></dt><dd>{key === "assignee" && assignees(current).length ? <span className="detail-assignees">{assignees(current).map(person => <span key={person}><AssigneeAvatar name={person} />{person}</span>)}</span> : display(current.fields[key])}</dd></div>)}</dl>
+   <dl className="detail-grid">{properties.map(([key, label]) => {
+    const readOnly = isReadOnlyProperty(key);
+    const value = current.fields[key];
+    const stateClass = key === "status" || key === "priority" ? `property-value-${key}` : "";
+    return <div className={`detail-property${readOnly ? " read-only" : ""}`} key={key} onDoubleClick={() => !readOnly && start("field", key)}><dt><PropertyIcon name={key} /><span>{label}</span>{!readOnly && <button className="inline-edit" aria-label={`Edit ${label.toLowerCase()}`} onClick={() => start("field", key)}>Edit</button>}</dt><dd className={stateClass} data-value={key === "status" || key === "priority" ? String(value ?? "").toLowerCase() : undefined}>{key === "assignee" && assignees(current).length ? <span className="detail-assignees">{assignees(current).map(person => <span key={person}><AssigneeAvatar name={person} />{person}</span>)}</span> : display(value)}</dd></div>;
+   })}</dl>
    {parent && <button className="parent-task-link" onClick={() => openRelated(parent)}>Parent task <span>{parent.id}</span> {parent.title}</button>}
    {children.length > 0 && <section className="subtasks-panel" aria-label="Subtasks">
     <header><h3>Subtasks <span>{children.length}</span></h3><div><span>{doneChildren} of {children.length} complete</span><progress aria-label="Subtasks completion" value={doneChildren} max={children.length} /></div></header>
@@ -104,7 +143,6 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
      </button>;
     })}</div>
    </section>}
-   <details className="raw-fields"><summary>Identity and additional fields</summary><dl>{Object.entries(current.fields).filter(([key]) => !(key in fieldLabels)).map(([key, value]) => <div key={key}><dt>{key}</dt><dd><pre>{display(value)}</pre></dd></div>)}</dl></details>
    {draft && <section className="field-editor" aria-label="Active edit">
     <div className="editor-heading"><h3>Editing {fieldLabels[draft.key] ?? editableSectionLabels[draft.key] ?? draft.key}</h3><span>Draft stays here until Save or Cancel</span></div>
     {draft.kind === "field" && (draft.key === "status" || draft.key in fieldChoices) ? <select aria-label={`${fieldLabels[draft.key]} draft`} value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })}>{draft.key !== "status" && <option value="">Not set</option>}{!(draft.key === "status" ? statuses : fieldChoices[draft.key]).includes(draft.text) && draft.text && <option>{draft.text}</option>}{(draft.key === "status" ? statuses : fieldChoices[draft.key]).map(value => <option key={value}>{value}</option>)}</select> : <textarea ref={editor} aria-label="Draft" rows={draft.kind === "section" ? 10 : listFields.has(draft.key) ? 4 : 2} value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })} />}
