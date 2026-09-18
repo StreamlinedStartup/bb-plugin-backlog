@@ -23,7 +23,8 @@ in the right rail. On narrow screens, projects become a horizontal selector.
   heading to edit it, then explicitly Save or Cancel. Keyboard activation is
   available when the editable property or heading has focus. List values are
   grouped into compact chips, and long paths are shortened with the full value
-  available on hover.
+  available on hover. Field editors open in the property being changed, and
+  due dates use a date picker.
 - Related subtasks appear as linked rows with status, assignee, and completion
   progress. Explicit parent fields, declared child IDs, and numbered child IDs
   are supported. Acceptance checklists render as structured rows.

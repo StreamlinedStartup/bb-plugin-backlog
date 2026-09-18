@@ -141,9 +141,20 @@ const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "ti
  const activateEdit = (event: KeyboardEvent, key: string) => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); start("field", key); }
  };
+ const renderFieldEditor = (key: string, label: string) => {
+  if (!draft || draft.kind !== "field" || draft.key !== key) return null;
+  const choices = key === "status" ? statuses : fieldChoices[key];
+  const update = (text: string) => setDraft({ ...draft, text });
+  return <div className="inline-field-editor" aria-label={`Editing ${label.toLowerCase()}`}>
+   {choices ? <select aria-label={`${label} draft`} value={draft.text} onChange={event => update(event.target.value)}>{key !== "status" && <option value="">Not set</option>}{!choices.includes(draft.text) && draft.text && <option>{draft.text}</option>}{choices.map(value => <option key={value}>{value}</option>)}</select> : key === "due_date" ? <input type="date" aria-label="Due date draft" value={draft.text.slice(0, 10)} onChange={event => update(event.target.value)} /> : <textarea ref={editor} aria-label="Draft" rows={listFields.has(key) ? 4 : 2} value={draft.text} onChange={event => update(event.target.value)} />}
+   {listFields.has(key) && <small>One value per line.</small>}
+   {conflict && <div className="conflict"><h4>Current file value</h4><pre>{display(current.fields[key])}</pre><p>Your draft remains in the editor above.</p><button onClick={rebase}>Use my draft over this value</button></div>}
+   <div className="modal-actions"><button className="primary" onClick={() => void save()} disabled={pending || conflict || missing || current.errors.length > 0}>{pending ? "Saving..." : "Save changes"}</button><button disabled={pending} onClick={cancel}>Cancel edit</button></div>
+  </div>;
+ };
  return <dialog ref={dialog} className="backlog-modal" aria-labelledby="task-modal-title" onCancel={event => { event.preventDefault(); if (pending) return; if (draft) cancel(); else onClose(); }}>
   <div className="task-modal">
-   <header className="modal-header"><div><span className="task-id">{current.id} / {current.storage}</span><h2 id="task-modal-title" role="button" tabIndex={0} aria-label="Edit title" onKeyDown={event => activateEdit(event, "title")} onDoubleClick={() => start("field", "title")}>{current.title}</h2></div><button onClick={close} aria-label="Close task">Close</button></header>
+   <header className="modal-header"><div><span className="task-id">{current.id} / {current.storage}</span><h2 id="task-modal-title" role={draft?.kind === "field" && draft.key === "title" ? undefined : "button"} tabIndex={draft?.kind === "field" && draft.key === "title" ? undefined : 0} aria-label={draft?.kind === "field" && draft.key === "title" ? undefined : "Edit title"} onKeyDown={event => activateEdit(event, "title")} onDoubleClick={() => start("field", "title")}>{draft?.kind === "field" && draft.key === "title" ? renderFieldEditor("title", "Title") : current.title}</h2></div><button onClick={close} aria-label="Close task">Close</button></header>
    {recovery && <section className="notice error"><h3>Saved draft recovery</h3><pre>{recovery}</pre><button onClick={() => setRecovery(null)}>Discard unreadable saved draft</button></section>}
    {missing && <p role="alert" className="notice error">This task is no longer in the current snapshot. Your draft is still here. Check whether the file moved or the source is unavailable.</p>}
    {current.errors.map((text, i) => <p className="notice error" key={i}>{text}</p>)}
@@ -153,7 +164,8 @@ const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "ti
     const stateClass = key === "status" || key === "priority" ? `property-value-${key}` : "";
     const editable = !readOnly;
     const renderedValue = key === "assignee" && assignees(current).length ? <span className="detail-assignees">{assignees(current).map(person => <span key={person}><AssigneeAvatar name={person} />{person}</span>)}</span> : listFields.has(key) ? <PropertyList name={key} value={value} /> : key === "status" || key === "priority" ? <span className={`property-badge ${stateClass}`} data-state={stateValue(value)}>{display(value)}</span> : display(value);
-    return <div className={`detail-property${readOnly ? " read-only" : ""}`} data-editable={editable ? "true" : undefined} key={key} role={editable ? "button" : undefined} tabIndex={editable ? 0 : undefined} aria-label={editable ? `Edit ${label.toLowerCase()}` : undefined} onKeyDown={editable ? event => activateEdit(event, key) : undefined} onDoubleClick={editable ? () => start("field", key) : undefined}><dt><PropertyIcon name={key} /><span>{label}</span></dt><dd className="property-value">{renderedValue}</dd></div>;
+    const editing = draft?.kind === "field" && draft.key === key;
+    return <div className={`detail-property${readOnly ? " read-only" : ""}${editing ? " editing" : ""}`} data-editable={editable ? "true" : undefined} key={key} role={editable && !editing ? "button" : undefined} tabIndex={editable && !editing ? 0 : undefined} aria-label={editable && !editing ? `Edit ${label.toLowerCase()}` : undefined} onKeyDown={editable && !editing ? event => activateEdit(event, key) : undefined} onDoubleClick={editable && !editing ? () => start("field", key) : undefined}><dt><PropertyIcon name={key} /><span>{label}</span></dt><dd className="property-value">{editing ? renderFieldEditor(key, label) : renderedValue}</dd></div>;
    })}</dl>
    {parent && <button className="parent-task-link" onClick={() => openRelated(parent)}>Parent task <span>{parent.id}</span> {parent.title}</button>}
    {children.length > 0 && <section className="subtasks-panel" aria-label="Subtasks">
@@ -168,11 +180,10 @@ const properties = [...Object.entries(fieldLabels).filter(([key]) => key !== "ti
      </button>;
     })}</div>
    </section>}
-   {draft && <section className="field-editor" aria-label="Active edit">
+   {draft?.kind === "section" && <section className="field-editor" aria-label="Active edit">
     <div className="editor-heading"><h3>Editing {fieldLabels[draft.key] ?? editableSectionLabels[draft.key] ?? draft.key}</h3><span>Draft stays here until Save or Cancel</span></div>
-    {draft.kind === "field" && (draft.key === "status" || draft.key in fieldChoices) ? <select aria-label={`${fieldLabels[draft.key]} draft`} value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })}>{draft.key !== "status" && <option value="">Not set</option>}{!(draft.key === "status" ? statuses : fieldChoices[draft.key]).includes(draft.text) && draft.text && <option>{draft.text}</option>}{(draft.key === "status" ? statuses : fieldChoices[draft.key]).map(value => <option key={value}>{value}</option>)}</select> : <textarea ref={editor} aria-label="Draft" rows={draft.kind === "section" ? 10 : listFields.has(draft.key) ? 4 : 2} value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })} />}
-    {listFields.has(draft.key) && <small>One value per line.</small>}
-    {conflict && <div className="conflict"><h4>Current file value</h4><pre>{display(draft.kind === "field" ? current.fields[draft.key] : current.sections[draft.key])}</pre><p>Your draft remains in the editor above.</p><button onClick={rebase}>Use my draft over this value</button></div>}
+    <textarea ref={editor} aria-label="Draft" rows={10} value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })} />
+    {conflict && <div className="conflict"><h4>Current file value</h4><pre>{display(current.sections[draft.key])}</pre><p>Your draft remains in the editor above.</p><button onClick={rebase}>Use my draft over this value</button></div>}
     <div className="modal-actions"><button className="primary" onClick={() => void save()} disabled={pending || conflict || missing || current.errors.length > 0}>{pending ? "Saving..." : "Save changes"}</button><button disabled={pending} onClick={cancel}>Cancel edit</button></div>
    </section>}
    {error && <p className="notice error" role="alert">{error}</p>}

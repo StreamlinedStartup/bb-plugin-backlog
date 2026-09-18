@@ -9,6 +9,7 @@ HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); 
 const { render, fireEvent, cleanup, waitFor } = await import("@testing-library/react");
 const { default: TaskModal } = await import("../src/TaskModal");
 const { parseTask } = await import("../src/task-format");
+import type { Edit } from "../src/model";
 const task = parseTask("---\nid: T-1\ntitle: Original\nstatus: To Do\ncreated_date: 2026-09-16 08:30\nupdated_date: 2026-09-17 14:45\n---\n## Description\nHello **world**\n", { path: "task.md", revision: "r", storage: "active" });
 afterEach(() => { cleanup(); sessionStorage.clear(); });
 test("fields start in preview and double-click enables explicit editing", () => {
@@ -52,7 +53,19 @@ test("external snapshots update previews without discarding the active draft", (
  const view = render(<TaskModal {...props} task={task} />);
  fireEvent.doubleClick(view.getByText("Original")); fireEvent.change(view.getByLabelText("Draft"), { target: { value: "User draft" } });
  view.rerender(<TaskModal {...props} task={{ ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title", status: "Done" } }} />);
- expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft"); expect(view.getByText("Agent title")).toBeTruthy(); expect(view.getByText("Done")).toBeTruthy();
+ expect((view.getByLabelText("Draft") as HTMLTextAreaElement).value).toBe("User draft"); expect(view.getByText("Done")).toBeTruthy();
+});
+test("property editing stays in place and due dates use a date picker", async () => {
+ const dueTask = { ...task, fields: { ...task.fields, due_date: "2026-10-01" } };
+ let edits: Edit[] = [];
+ const view = render(<TaskModal task={dueTask} statuses={["To Do", "Done"]} onClose={() => undefined} onSave={async next => { edits = next; return { task: dueTask, conflict: false, message: "" }; }} />);
+ fireEvent.doubleClick(view.getByText("2026-10-01"));
+ const editor = view.getByLabelText("Due date draft") as HTMLInputElement;
+ expect(editor.type).toBe("date");
+ expect(view.container.querySelector(".detail-property.editing")?.contains(editor)).toBe(true);
+ fireEvent.change(editor, { target: { value: "2026-10-15" } });
+ fireEvent.click(view.getByText("Save changes"));
+ await waitFor(() => expect(edits[0]?.value).toBe("2026-10-15"));
 });
 test("save conflict preserves draft and requires explicit resolution", async () => {
  const current = { ...task, title: "Agent title", fields: { ...task.fields, title: "Agent title" } };

@@ -82,6 +82,14 @@
 .backlog-modal .property-list{display:flex;flex-wrap:wrap;gap:5px 6px;padding:0}
 .backlog-modal .property-chip{display:inline-block;max-width:100%;padding:3px 7px;border:1px solid #e1e6ed;border-radius:4px;background:#fafbfd;color:#4f5b68;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .backlog-modal .detail-property[data-editable=true] .property-chip:hover{border-color:#b8c5d9;background:#f2f5fa}
+.backlog-modal .detail-property.editing{background:#f8faff;border-color:#b6c9e6;padding:12px 10px 13px;margin:-1px 0}
+.backlog-modal .detail-property.editing dd{padding-left:0}
+.backlog-modal .inline-field-editor{display:grid;gap:7px;width:100%}
+.backlog-modal .inline-field-editor textarea,.backlog-modal .inline-field-editor select,.backlog-modal .inline-field-editor input{width:100%;margin:0;line-height:1.45;resize:vertical}
+.backlog-modal .inline-field-editor input[type=date]{min-height:34px}
+.backlog-modal .inline-field-editor small{font-size:11px;color:#626b77}
+.backlog-modal .modal-header h2 .inline-field-editor{margin-top:10px;min-width:min(560px,70vw)}
+.backlog-modal .modal-header h2 .inline-field-editor textarea{font-size:18px;font-weight:500}
 .backlog-modal .field-editor{padding:18px;border:1px solid #b6c9e6;border-radius:8px;background:#f8faff;margin:18px 0}
 .backlog-modal .editor-heading h3{font-size:16px;margin:0 0 3px}
 .backlog-modal .editor-heading span{font-size:12px;color:#626b77}
