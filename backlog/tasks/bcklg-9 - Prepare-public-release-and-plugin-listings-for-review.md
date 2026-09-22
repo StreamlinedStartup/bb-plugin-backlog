@@ -1,11 +1,11 @@
 ---
 id: BCKLG-9
 title: Prepare public release and plugin listings for review
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-22 02:55'
-updated_date: '2026-09-22 03:08'
+updated_date: '2026-09-22 03:13'
 labels: []
 dependencies: []
 ordinal: 10000
@@ -21,8 +21,8 @@ Publish the existing plugin so BB users can discover and install it. The user mu
 <!-- AC:BEGIN -->
 - [x] #1 Release metadata, license and install documentation are ready for review
 - [x] #2 Tests, type checks and a production-only dependency build pass
-- [ ] #3 BB marketplace entry and awesome list PR are prepared and validated locally
-- [ ] #4 User approves publication before remote changes or PR submission
+- [x] #3 BB marketplace entry and awesome list PR are prepared and validated locally
+- [x] #4 User approves publication before remote changes or PR submission
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,4 +39,12 @@ Prepared MIT license, public repository metadata, SDK range ^0.4.87, installatio
 User requested display name Backlog.MD. Updated manifest name, navigation labels, documentation, bundled skill and both publication drafts. Package/repository bb-plugin-backlog and plugin ID backlog stay stable. Publication still awaits review.
 
 Added user-requested non-affiliation and non-endorsement disclaimer near the top of the README and in the marketplace overview, linking to MrLesk/Backlog.md and thanking its maintainers and contributors. Marketplace build passes with the updated overview. Display-name update also passed typecheck/build and the installed plugin was reloaded.
+
+User approved publication. Published public repository StreamlinedStartup/bb-plugin-backlog with bb-plugin topic and v0.1.0 at 7176169b7a449f74edc4544018e9d0cc5bc9e076. Fresh public-tag clone passed production-only install and BB build. Registry-wide liveness passed using Bun info for registry lookups instead of npm view. Submitted marketplace PR https://github.com/get-bb/marketplace/pull/345 and awesome list PR https://github.com/MGrin/awesome-bb-plugins/pull/48. The release commit used a one-command hook bypass after reviewing UBS findings: request-generation counter misidentified as secret, handled async event, JSX key false positives and pre-existing style warnings; staged source changes were display-name strings only.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Published Backlog.MD 0.1.0 under MIT with non-affiliation acknowledgment, install docs, screenshot and overview. Verified 70 tests, typecheck, builds, installed-host behavior, public-tag production-only build, marketplace build/tests/v1 gate and registry-wide source liveness. Both requested PRs are open for maintainer review.
+<!-- SECTION:FINAL_SUMMARY:END -->
