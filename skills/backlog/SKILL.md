@@ -1,11 +1,11 @@
 ---
 name: backlog
-description: Work with the Markdown tasks displayed by the BB Backlog board.
+description: Work with the Markdown tasks displayed by the BB Backlog.MD board.
 ---
 
-# Backlog board
+# Backlog.MD board
 
-Backlog adds a Tasks Kanban page to BB navigation. It discovers `backlog/`,
+Backlog.MD adds a Tasks Kanban page to BB navigation. It discovers `backlog/`,
 `.backlog/`, and `backlog_directory` in root `backlog.config.yml`. A user may
 select a different folder per BB project and checkout in Folder settings.
 

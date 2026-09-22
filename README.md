@@ -1,8 +1,32 @@
-# BB Backlog
+# Backlog.MD
 
 A light-only Kanban page for Backlog.md tasks, installed as a BB plugin.
 
-Open **Backlog** in BB navigation. The center board shows configured status
+This is an independent BB plugin, not affiliated with or endorsed by the
+official [Backlog.md project](https://github.com/MrLesk/Backlog.md).
+We are grateful to its maintainers and contributors for their work.
+
+## Install
+
+Requires BB 0.43 or later and Plugin SDK 0.4.87 through 0.4.x. Install from
+the tagged Git release:
+
+```sh
+bb plugin install 'git:https://github.com/StreamlinedStartup/bb-plugin-backlog.git@v0.1.0'
+```
+
+The plugin builds from source during installation. No external account, API
+key, or Backlog CLI is required. Select a BB project with an existing
+[Backlog.md](https://github.com/MrLesk/Backlog.md) task folder. The plugin
+reads and edits that folder through BB's enrolled host; it does not create tasks.
+It uses experimental BB host and provider APIs. macOS has been tested;
+Windows host paths have not been verified.
+
+## Board
+
+![Backlog.MD board with filters, task cards and checklist progress](docs/screenshots/board.jpg)
+
+Open **Backlog.MD** in BB navigation. The center board shows configured status
 lanes, including empty lanes. Every BB project, including Personal, appears
 in the right rail. On narrow screens, projects become a horizontal selector.
 
@@ -31,6 +55,8 @@ in the right rail. On narrow screens, projects become a horizontal selector.
 - Search across task content. Storage filters distinguish active `tasks/`,
   `completed/`, and `archive/tasks/`. Hide the last configured status using the
   checkbox. Editing an archived task never restores it to active storage.
+- Filter by status, priority, assignee, or label. Sort by ordinal, title,
+  priority, due date, creation date, or update date, in either direction.
 
 No Backlog CLI is required by the plugin. This repository uses its installed
 CLI to track plugin development, according to AGENTS.md.
@@ -158,3 +184,7 @@ If tasks are missing, check Folder settings and the source host, then read the
 warning. Runtime logs are available through `bb plugin logs backlog`.
 
 Assignee badges recognize Codex and Claude (including Claude Code) and use BB provider artwork at a compact size. Other assignees display their first two letters.
+
+## License
+
+[MIT](LICENSE).

@@ -90,8 +90,8 @@ export function Page() {
  };
  const currentTask = modal ? board?.tasks.find(task => task.path === modal.path) ?? modal : null;
  return <div className="backlog-root">
-  <aside className="section-nav" aria-label="Backlog sections"><strong>Backlog</strong><button className="section-link active" aria-current="page">Tasks</button></aside>
-  <main className="board-area"><header className="toolbar"><div><h1>{project?.name ?? "Backlog"}</h1><p>{board?.folder ?? "Markdown tasks across your projects"}</p></div><span className="connection">{moving ? "Saving move..." : connection === "connected" ? "Live updates" : "Reconnecting"}</span></header>
+  <aside className="section-nav" aria-label="Backlog.MD sections"><strong>Backlog.MD</strong><button className="section-link active" aria-current="page">Tasks</button></aside>
+  <main className="board-area"><header className="toolbar"><div><h1>{project?.name ?? "Backlog.MD"}</h1><p>{board?.folder ?? "Markdown tasks across your projects"}</p></div><span className="connection">{moving ? "Saving move..." : connection === "connected" ? "Live updates" : "Reconnecting"}</span></header>
    <div className="controls"><input aria-label="Search tasks" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tasks" /><select aria-label="Task storage" value={storage} onChange={event => setStorage(event.target.value)}>{Object.entries(STORAGE).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select><label className="completed-toggle"><input type="checkbox" checked={hideDone} onChange={event => setHideDone(event.target.checked)} />Hide {doneStatus || "completed"}</label><button disabled={!project} onClick={() => setSettings(!settings)}>Folder settings</button><button onClick={() => void load()}>Refresh</button></div>
    {board && <BoardControls filters={boardFilters} options={filterOptions} setFilters={setBoardFilters} />}
    {settings && project && <FolderSettings key={project.id} project={project} rpc={rpc} saved={load} close={() => setSettings(false)} />}
@@ -109,4 +109,4 @@ export function Page() {
   {currentTask && <TaskModal key={currentTask.path} task={currentTask} draftStorageKey={`${selected}:${board?.sourceId}:${currentTask.path}`} statuses={statuses} relatedTasks={board?.tasks ?? []} onOpenTask={setModal} fieldChoices={board?.choices} missing={!board?.tasks.some(task => task.path === currentTask.path)} onClose={() => setModal(null)} onSave={save} />}
  </div>;
 }
-export default definePluginApp(app => { app.slots.navPanel({ id: "backlog", title: "Backlog", icon: "ListTodo", path: "backlog", component: Page }); });
+export default definePluginApp(app => { app.slots.navPanel({ id: "backlog", title: "Backlog.MD", icon: "ListTodo", path: "backlog", component: Page }); });

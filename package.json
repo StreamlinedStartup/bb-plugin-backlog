@@ -1,13 +1,20 @@
 {
   "name": "bb-plugin-backlog",
   "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StreamlinedStartup/bb-plugin-backlog.git"
+  },
+  "homepage": "https://github.com/StreamlinedStartup/bb-plugin-backlog#readme",
+  "bugs": "https://github.com/StreamlinedStartup/bb-plugin-backlog/issues",
   "type": "module",
   "engines": {
     "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "bbPluginSdk": "^0.4.87"
   },
   "bb": {
-    "name": "Backlog",
+    "name": "Backlog.MD",
     "description": "A live Kanban board for Backlog.md tasks across BB projects.",
     "branding": {
       "icon": "ListTodo"
