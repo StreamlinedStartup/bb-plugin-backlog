@@ -144,8 +144,9 @@ hooks are outside this version.
 
 ## Development
 
-The project pins Bun 1.4.2 through mise and SDK 0.4.87. BB supplies React at
-runtime; test dependencies provide React locally.
+The project pins pnpm 12.4.2 for dependencies, Bun 1.4.2 for tests and scripts,
+and SDK 0.5.9. BB supplies React at runtime; test dependencies provide React
+locally. See [dependency management](docs/development.md).
 
 ```sh
 mise install
