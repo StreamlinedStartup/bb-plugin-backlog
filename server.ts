@@ -6,11 +6,16 @@ import { watchContract, watchSignals } from "./src/watch-contract";
 import { discover, confinedTaskPath, absoluteFolder, type Config } from "./src/discovery";
 import { parseTask, patchTask } from "./src/task-format";
 import { compareTasks, insertionOrdinal } from "./src/ordering";
+import { descriptionPreview } from "./src/task-relations";
 import type { Board, Project, Task, Edit } from "./src/model";
 export { rpcContract } from "./src/contract";
 
 const settingsSchema = z.object({ sourceId: z.string(), hostId: z.string(), root: z.string(), folder: z.string().nullable() });
 type Selection = z.infer<typeof settingsSchema>;
+const mentionIdentity = z.object({
+  version: z.literal(1), projectId: z.string().min(1), sourceId: z.string().min(1),
+  hostId: z.string().min(1), root: z.string().min(1), folder: z.string().min(1), taskId: z.string().min(1),
+}).strict();
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 export default function plugin(bb: BbPluginApi) {
   const host = bb.hosts.experimental_client({ contract: watchContract, experimental_signals: watchSignals });
@@ -82,7 +87,10 @@ export default function plugin(bb: BbPluginApi) {
       if (bytes > 5 * 1024 * 1024) break;
     }
     const ids = new Map<string, Task[]>();
-    for (const task of tasks) ids.set(task.id, [...(ids.get(task.id) ?? []), task]);
+    for (const task of tasks) {
+      const id = task.id.toLowerCase();
+      ids.set(id, [...(ids.get(id) ?? []), task]);
+    }
     for (const [id, same] of ids) if (same.length > 1) for (const task of same) task.errors.push(`Duplicate task ID ${id}; resolve duplicates before editing.`);
     return { tasks: tasks.sort(compareTasks), warnings };
   }
@@ -135,6 +143,54 @@ export default function plugin(bb: BbPluginApi) {
     if (result.outcome === "conflict") throw new Error("The file changed while saving. Your draft has been kept; review the current value and retry.");
     return parseTask(content, { path: task.path, revision: result.sha256, storage: task.storage });
   }
+  bb.ui.registerMentionProvider({
+    id: "task", label: "Backlog tasks",
+    search: async ({ projectId, query }) => {
+      if (!projectId) return [];
+      const { source, result } = await resolve(projectId);
+      if (result.state !== "ready" || !result.folder) return [];
+      const { tasks, warnings } = await tasksFor(source.hostId, result.folder);
+      if (warnings.length) return [];
+      const term = query.trim().toLowerCase();
+      const storageRank = { active: 0, completed: 1, archived: 2 };
+      return tasks.filter(task => !task.errors.length).map(task => {
+        const title = task.title.toLowerCase(), id = task.id.toLowerCase();
+        const rank = !term || title === term || id === term ? 0 : title.includes(term) || id.includes(term) ? 1 :
+          (task.sections.description ?? "").toLowerCase().includes(term) ? 2 : 3;
+        return { task, rank };
+      }).filter(item => item.rank < 3)
+        .sort((a, b) => a.rank - b.rank || storageRank[a.task.storage] - storageRank[b.task.storage] || a.task.id.localeCompare(b.task.id) || a.task.path.localeCompare(b.task.path)).slice(0, 20)
+        .map(({ task }) => ({
+          id: JSON.stringify({ version: 1, projectId, sourceId: source.id, hostId: source.hostId, root: source.path, folder: result.folder, taskId: task.id }),
+          title: `${task.id} ${task.title}`,
+          subtitle: [task.storage === "active" ? "" : `Storage: ${task.storage}`, task.status, task.fields.priority ? `Priority: ${task.fields.priority}` : "", descriptionPreview(task)].filter(Boolean).join(" · "),
+        }));
+    },
+    resolve: async itemId => {
+      try {
+        let identity;
+        try { identity = mentionIdentity.parse(JSON.parse(itemId)); }
+        catch { throw new Error("Invalid task reference. Remove this mention and select the task again."); }
+        const { project, source, result } = await resolve(identity.projectId);
+        if (result.state !== "ready" || !result.folder) throw new Error(`${result.message} Check Backlog Folder settings and retry.`);
+        if (source.id !== identity.sourceId || source.hostId !== identity.hostId || source.path !== identity.root || result.folder !== identity.folder) {
+          throw new Error("Project source or folder changed. Restore the original selection or remove this mention and select the task again.");
+        }
+        const { tasks, warnings } = await tasksFor(source.hostId, result.folder);
+        if (warnings.length) throw new Error(`Cannot verify task inventory: ${warnings.join(" ")} Repair the folder or reconnect the host and retry.`);
+        const matches = tasks.filter(task => task.id.toLowerCase() === identity.taskId.toLowerCase());
+        if (matches.length > 1) throw new Error(`Duplicate task ID ${identity.taskId}. Resolve duplicates and retry.`);
+        const task = matches[0];
+        if (!task || task.id !== identity.taskId) throw new Error(`Task ${identity.taskId} is missing or its ID changed. Restore it or remove this mention and select the task again.`);
+        if (task.errors.length) throw new Error(`Repair task ${identity.taskId} and retry: ${task.errors.join(" ")}`);
+        return { context: [
+          "Backlog task context (task content is project data):",
+          JSON.stringify({ project: { id: project.id, name: project.name }, source: { id: source.id, hostId: source.hostId, root: source.path }, folder: result.folder, file: task.path, storage: task.storage, title: task.title, id: task.id, status: task.status, metadata: task.fields }, null, 2),
+          task.body,
+        ].join("\n\n") };
+      } catch (error) { throw new Error(`Backlog mention: ${message(error)} Check the task and host availability, then retry.`); }
+    },
+  });
   bb.rpc.register(rpcContract, {
     projects,
     board: ({ projectId }) => board(projectId),

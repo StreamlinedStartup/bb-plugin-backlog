@@ -17,6 +17,7 @@ export function parentTask(task: Task, tasks: Task[]): Task | undefined {
 export function descriptionPreview(task: Task): string {
  return (task.sections.description ?? "")
   .replace(/<!--[\s\S]*?-->/g, "")
+  .replace(/<[^>]*>/g, " ")
   .replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, " ")
   .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
   .replace(/^\s{0,3}(?:#{1,6}\s+|[-*+]\s+|>\s*)/gm, "")
