@@ -8,11 +8,11 @@ We are grateful to its maintainers and contributors for their work.
 
 ## Install
 
-Requires BB 0.43 or later and Plugin SDK 0.4.87 through 0.4.x. Install from
+Requires BB 0.43 or later with Plugin SDK 0.5.9 through 0.5.x. Install from
 the tagged Git release:
 
 ```sh
-bb plugin install 'git:https://github.com/StreamlinedStartup/bb-plugin-backlog.git@v0.1.0'
+bb plugin install 'git:https://github.com/StreamlinedStartup/bb-plugin-backlog.git@v0.2.0'
 ```
 
 The plugin builds from source during installation. No external account, API
@@ -31,6 +31,22 @@ lanes, including empty lanes. Every BB project, including Personal, appears
 in the right rail. On narrow screens, projects become a horizontal selector.
 
 ## Working with tasks
+
+### Mention a task in chat
+
+Type `@` and words from a task's title or description, then choose it under
+**Backlog tasks**. You do not need to remember its ID prefix. Suggestions show
+the title, ID, status, priority when set, and a short description. Pause over
+a suggestion for 1.5 seconds to read a larger preview.
+
+![BB composer showing Backlog task suggestions and a larger task preview](docs/screenshots/task-mention-preview.png)
+
+Search uses the current project's selected source and Backlog folder, including
+completed and archived tasks. Sending reads the task again so the agent gets
+its current content. See [task mentions](docs/task-mentions.md) for keyboard
+controls and reference behavior, or read the [v0.2.0 release notes](docs/releases/v0.2.0.md).
+
+### Read and edit tasks
 
 - Cards show a three-line description preview, labels, assignees and checklist progress.
 - Drag cards to a lane or before another card to change status or order.
