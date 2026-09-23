@@ -8,6 +8,7 @@ import TaskCard from "./src/TaskCard";
 import BoardControls from "./src/BoardControls";
 import { selectBoardTasks, type BoardFilters } from "./src/board-controls";
 import { childTasks } from "./src/task-relations";
+import { mountMentionPreview } from "./src/mention-preview";
 import "./app.css";
 const STORAGE = { active: "Active tasks", completed: "Completed storage", archived: "Archived tasks", all: "All storage" };
 const textError = (cause: unknown) => cause instanceof Error ? cause.message : String(cause);
@@ -109,4 +110,4 @@ export function Page() {
   {currentTask && <TaskModal key={currentTask.path} task={currentTask} draftStorageKey={`${selected}:${board?.sourceId}:${currentTask.path}`} statuses={statuses} relatedTasks={board?.tasks ?? []} onOpenTask={setModal} fieldChoices={board?.choices} missing={!board?.tasks.some(task => task.path === currentTask.path)} onClose={() => setModal(null)} onSave={save} />}
  </div>;
 }
-export default definePluginApp(app => { app.slots.navPanel({ id: "backlog", title: "Backlog.MD", icon: "ListTodo", path: "backlog", component: Page }); });
+export default definePluginApp(app => { app.contentScripts.register({ id: "mention-preview", mount: mountMentionPreview }); app.slots.navPanel({ id: "backlog", title: "Backlog.MD", icon: "ListTodo", path: "backlog", component: Page }); });

@@ -28,3 +28,30 @@ filters and numeric `ordinal` ordering, including keyboard move controls.
 No task creation, deletion, archive/restore, status hooks, Git actions, or
 Backlog CLI commands are exposed by this plugin. Decisions, Docs, and Plans
 are future sections; task implementation-plan sections are supported today.
+
+## Composer mentions
+
+Use `@` in a project composer to find active, completed and archived tasks by title, full ID or description
+under **Backlog tasks**. Search uses the board's selected project source/folder;
+no prefix knowledge is required. Select with arrow keys and Enter. Drafts retain
+the reference; sending reads fresh metadata, body and project/source/file context.
+Missing/duplicate/invalid tasks, incomplete scans, changed source/folder selection
+and unavailable hosts block send. Restore the original reference and retry or
+remove and reselect the mention. See `docs/task-mentions.md` for details.
+
+Suggestions show status, optional priority and a short plain-text description.
+Exact ID/title matches rank first, partial title/ID next, description-only last;
+Storage (active first), then ID/path break ties and order empty queries. At most 20 suggestions are returned.
+
+Historical suggestions label storage separately from status. Existing draft
+references survive title/filename changes and moves among task directories in
+the original folder. Changing the task ID, source, host/root or Backlog folder
+requires restoring the original reference or selecting again. Retry after host
+reconnection or task restoration reads current content. BB may require a
+nonempty query before asking plugin providers for suggestions.
+
+Pause over a Backlog suggestion, or leave it keyboard-highlighted, for 1.5
+seconds to read a larger preview (up to 420 description characters). Escape or
+selection dismisses it. This content-script prototype depends on BB 0.5.9's
+suggestion-row markup; native preview support should replace that dependency
+when available. It uses the row's existing text and adds no task fetch.

@@ -213,3 +213,6 @@
  .backlog-modal .detail-grid .detail-property:nth-last-child(-n+2){border-bottom:1px solid #eef0f3}
  .backlog-modal .detail-grid .detail-property:last-child{border-bottom:0}
 }
+.backlog-mention-preview{position:fixed;z-index:1000;width:380px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--popover-foreground);box-shadow:0 8px 24px #0002;font:13px/1.5 var(--font-sans,system-ui,sans-serif);overflow-wrap:anywhere}
+.backlog-mention-preview strong{display:block;font-size:14px;line-height:1.4;font-weight:600}
+.backlog-mention-preview p{margin:10px 0 0;white-space:pre-line}
