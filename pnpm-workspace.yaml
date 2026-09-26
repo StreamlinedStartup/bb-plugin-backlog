@@ -1,2 +1,4 @@
 allowBuilds:
   better-sqlite3: true
+minimumReleaseAgeExclude:
+  - '@get-bb/plugin-sdk@0.5.29'
