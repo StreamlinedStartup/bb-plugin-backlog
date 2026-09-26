@@ -68,10 +68,43 @@ async function inventory(folder: string) {
  }
  return { files, warnings };
 }
+async function markdownInventory(folder: string) {
+ if (!isAbsolute(folder)) throw new Error("Backlog folder must be absolute.");
+ const root = resolve(folder);
+ const rootStat = await lstat(root);
+ if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error("Select a real Backlog directory, not a symbolic link.");
+ const documents: string[] = [], decisions: string[] = [], warnings: string[] = [];
+ let directories = 0;
+ for (const [name, output] of [["docs", documents], ["decisions", decisions]] as const) {
+  const current = join(root, name);
+  let stat;
+  try { stat = await lstat(current); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
+  if (stat.isSymbolicLink()) { warnings.push(`Symbolic link skipped: ${current}`); continue; }
+  if (!stat.isDirectory()) { warnings.push(`Markdown storage is not a directory: ${current}`); continue; }
+  let count = 0;
+  async function walkRecords(dir: string, depth: number) {
+   if (depth > 16 || ++directories > 100) { warnings.push("Directory scan limit reached. Narrow the Backlog folder."); return; }
+   for (const item of await readdir(dir, { withFileTypes: true })) {
+    const file = join(dir, item.name);
+    if (item.isSymbolicLink()) { warnings.push(`Symbolic link skipped: ${file}`); continue; }
+    if (item.isDirectory()) await walkRecords(file, depth + 1);
+    else if (item.isFile() && /\.md$/i.test(item.name)) {
+     if (count >= 1000) { warnings.push(`${name} scan limit of 1000 files reached.`); return; }
+     count++; output.push(file);
+    }
+    if (directories > 100 || count >= 1000) return;
+   }
+  }
+  await walkRecords(current, 1);
+ }
+ return { documents, decisions, warnings };
+}
 export default experimental_defineHostEntry({
  contract: watchContract, experimental_signals: watchSignals,
  handlers: {
   inventory: ({ folder }) => inventory(folder),
+  markdownInventory: ({ folder }) => markdownInventory(folder),
   watch: async ({ key, rootPath, folder }, context) => {
    if (!isAbsolute(rootPath) || !isAbsolute(folder)) throw new Error("Watch paths must be absolute.");
    await queue(key, async () => {

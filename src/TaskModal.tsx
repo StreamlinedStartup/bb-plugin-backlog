@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { editSchema, type Edit, type FieldValue, type Task } from "./model";
 import { editableSectionLabels, fieldLabels, listFields } from "./task-format";
 import Markdown from "./Markdown";
+import { Quotable } from "./quote";
 import { childTasks, parentTask, assignees } from "./task-relations";
 export type SaveResult = { task: Task; conflict: boolean; message: string };
 const display = (value: unknown) => {
@@ -85,8 +86,9 @@ interface TaskModalProps {
  missing?: boolean;
  onClose: () => void;
  onSave: (edits: Edit[], baseRevision?: string) => Promise<SaveResult>;
+ onQuote?: (text: string) => void;
 }
-export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTask, fieldChoices = {}, draftStorageKey = task.path, missing = false, onClose, onSave }: TaskModalProps) {
+export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTask, fieldChoices = {}, draftStorageKey = task.path, missing = false, onClose, onSave, onQuote }: TaskModalProps) {
  const [current, setCurrent] = useState(task);
  const storageKey = `bb-backlog-draft:${draftStorageKey}`;
  const [restored] = useState(() => restoreDraft(storageKey));
@@ -196,6 +198,7 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
   const editing = draft?.kind === "field" && draft.key === key;
   return <div className={`detail-property${readOnly ? " read-only" : ""}${editing ? " editing" : ""}`} data-editable={editable ? "true" : undefined} key={key} role={editable && !editing ? "button" : undefined} tabIndex={editable && !editing ? 0 : undefined} aria-label={editable && !editing ? `Edit ${label.toLowerCase()}` : undefined} onKeyDown={editable && !editing ? event => activateEdit(event, key) : undefined} onDoubleClick={editable && !editing ? () => start("field", key) : undefined}><dt><PropertyIcon name={key} /><span>{label}</span></dt><dd className="property-value">{editing ? renderFieldEditor(key, label) : renderedValue}</dd></div>;
  };
+ const content = <Markdown onEditSection={key => start("section", key)} editable={editableSections}>{current.body}</Markdown>;
  return <dialog ref={dialog} className="backlog-modal" aria-labelledby="task-modal-title" onCancel={event => { event.preventDefault(); if (pending) return; if (draft) cancel(); else onClose(); }}>
   <div className="task-modal">
    <header className="modal-header"><div><span className="task-id">{current.id} / {current.storage}</span><h2 id="task-modal-title" role={draft?.kind === "field" && draft.key === "title" ? undefined : "button"} tabIndex={draft?.kind === "field" && draft.key === "title" ? undefined : 0} aria-label={draft?.kind === "field" && draft.key === "title" ? undefined : "Edit title"} onKeyDown={event => activateEdit(event, "title")} onDoubleClick={() => start("field", "title")}>{draft?.kind === "field" && draft.key === "title" ? renderFieldEditor("title", "Title") : current.title}</h2></div><button onClick={close} aria-label="Close task">Close</button></header>
@@ -211,7 +214,7 @@ export default function TaskModal({ task, statuses, relatedTasks = [], onOpenTas
       <div className="modal-actions"><button className="primary" onClick={() => void save()} disabled={pending || conflict || missing || current.errors.length > 0}>{pending ? "Saving..." : "Save changes"}</button><button disabled={pending} onClick={cancel}>Cancel edit</button></div>
      </section>}
      {error && <p className="notice error" role="alert">{error}</p>}
-     <section className="modal-content" aria-label="Task content"><Markdown onEditSection={key => start("section", key)} editable={editableSections}>{current.body}</Markdown></section>
+     <section className="modal-content" aria-label="Task content">{onQuote ? <Quotable onQuote={onQuote}>{content}</Quotable> : content}</section>
      {parent && <button className="parent-task-link" onClick={() => openRelated(parent)}>Parent task <span>{parent.id}</span> {parent.title}</button>}
      {children.length > 0 && <section className="subtasks-panel" aria-label="Subtasks">
       <header><h3>Subtasks <span>{children.length}</span></h3><div><span>{doneChildren} of {children.length} complete</span><progress aria-label="Subtasks completion" value={doneChildren} max={children.length} /></div></header>

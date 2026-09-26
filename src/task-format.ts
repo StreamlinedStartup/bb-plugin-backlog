@@ -16,8 +16,24 @@ const sectionDefinitions: Record<string, { title: string; marker: string }> = {
  "final summary": { title: "Final Summary", marker: "SECTION:FINAL_SUMMARY" },
 };
 export const editableSectionLabels = Object.fromEntries(Object.entries(sectionDefinitions).map(([key, def]) => [key, def.title]));
+const FRONTMATTER = /^(?:\uFEFF)?---[ \t]*(\r?\n)([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m;
+/** Separates a leading YAML block from the Markdown body; `meta` is null when there is none. */
+export function splitFrontmatter(raw: string) {
+ const match = FRONTMATTER.exec(raw);
+ return match && match.index === 0 ? { meta: match[2], body: raw.slice(match[0].length) } : { meta: null, body: raw };
+}
+/** Plain-text start of the first prose paragraph, skipping front matter, headings, code, tables and HTML. */
+export function markdownExcerpt(raw: string, max = 160) {
+ for (const block of splitFrontmatter(raw).body.split(/\r?\n[ \t]*\r?\n/)) {
+  const prose = block.split(/\r?\n/).filter(line => !/^\s{0,3}#{1,6}(\s|$)/.test(line)).join(" ").trim();
+  if (!prose || /^(```|~~~|<|\||---|\*\*\*)/.test(prose)) continue;
+  const text = prose.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/`|\*\*|~~/g, "").replace(/^>\s*/, "").replace(/\s+/g, " ").trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+ }
+ return "";
+}
 function frontmatter(raw: string) {
- const match = /^(?:\uFEFF)?---[ \t]*(\r?\n)([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m.exec(raw);
+ const match = FRONTMATTER.exec(raw);
  if (!match || match.index !== 0) throw new Error("Task is missing a YAML frontmatter block.");
  const start = raw.indexOf("\n") + 1;
  const text = match[2];

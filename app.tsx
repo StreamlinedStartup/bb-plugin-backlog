@@ -5,14 +5,18 @@ import type { rpcContract } from "./src/contract";
 import type { Board, Edit, Project, Task } from "./src/model";
 import TaskModal from "./src/TaskModal";
 import TaskCard from "./src/TaskCard";
+import MarkdownRecordPanel from "./src/MarkdownRecordPanel";
 import BoardControls from "./src/BoardControls";
 import { selectBoardTasks, type BoardFilters } from "./src/board-controls";
 import { childTasks } from "./src/task-relations";
 import { mountMentionPreview } from "./src/mention-preview";
+import { PendingQuoteReceiver, quoteWithSource, useSendQuote } from "./src/quote";
 import "./app.css";
+const SECTIONS = { tasks: "Tasks", documents: "Documents", decisions: "Decisions" } as const;
+const NO_RECORDS = { documents: [], decisions: [], warnings: [] };
 const STORAGE = { active: "Active tasks", completed: "Completed storage", archived: "Archived tasks", all: "All storage" };
 const textError = (cause: unknown) => cause instanceof Error ? cause.message : String(cause);
-function useBoard(id: string | null) {
+function useBoard(id: string | null, enabled = true) {
  const rpc = useRpc<typeof rpcContract>();
  const connection = useRealtimeConnectionState();
  const [projects, setProjects] = useState<Project[]>([]);
@@ -23,18 +27,18 @@ function useBoard(id: string | null) {
  const load = useCallback(async () => {
   const token = generation.current, request = ++serial.current;
   try {
-   const [all, snapshot] = await Promise.all([rpc.call("projects", null), id ? rpc.call("board", { projectId: id }) : Promise.resolve(null)]);
+   const [all, snapshot] = await Promise.all([rpc.call("projects", null), enabled && id ? rpc.call("board", { projectId: id }) : Promise.resolve(null)]);
    if (token !== generation.current || request !== serial.current) return;
    setProjects(all); setBoard(snapshot); setError("");
   } catch (cause) { if (token === generation.current && request === serial.current) setError(textError(cause)); }
- }, [id, rpc]);
+ }, [enabled, id, rpc]);
  useEffect(() => {
   generation.current++; setBoard(null); void load();
-  const timer = setInterval(() => void load(), 5000);
-  return () => { generation.current++; clearInterval(timer); if (id) void rpc.call("release", { projectId: id }).catch(() => undefined); };
- }, [load, id, rpc]);
- useEffect(() => { if (connection === "connected") void load(); }, [connection, load]);
- useRealtime("backlog-changed", () => void load());
+  const timer = enabled ? setInterval(() => void load(), 5000) : undefined;
+  return () => { generation.current++; if (timer) clearInterval(timer); if (id) void rpc.call("release", { projectId: id }).catch(() => undefined); };
+ }, [load, id, rpc, enabled]);
+ useEffect(() => { if (enabled && connection === "connected") void load(); }, [connection, enabled, load]);
+ useRealtime("backlog-changed", () => { if (enabled) void load(); });
  return { rpc, projects, board, error, load, connection };
 }
 function FolderSettings({ project, close, saved, rpc }: { project: Project; close: () => void; saved: () => Promise<void>; rpc: ReturnType<typeof useRpc<typeof rpcContract>> }) {
@@ -50,18 +54,32 @@ function FolderSettings({ project, close, saved, rpc }: { project: Project; clos
  return <section className="folder-settings" aria-label="Project folder settings"><header><h2>Task source</h2><button onClick={close}>Close settings</button></header><label>Project checkout<select aria-label="Project checkout" value={sourceId} onChange={e => { setSource(e.target.value); setFolder(""); }}>{project.sources.map(source => <option key={source.id} value={source.id}>{source.path} ({source.hostId})</option>)}</select></label>{!project.sources.length && <p>Add a checkout in BB project settings to use this project.</p>}<label>Custom Backlog folder<input aria-label="Custom Backlog folder" placeholder="Automatic: backlog.config.yml, backlog/ or .backlog/" value={folder} onChange={e => setFolder(e.target.value)} /></label><p>Use an absolute path or a path relative to this checkout. Leave blank for automatic detection.</p><div className="modal-actions"><button disabled={!sourceId || pending} onClick={async () => { try { const result = await rpc.call("browse", { projectId: project.id, sourceId }); if (result) setFolder(result); } catch (cause) { setError(textError(cause)); } }}>Browse on source host</button><button className="primary" disabled={!sourceId || pending} onClick={() => void submit()}>Save settings</button></div>{error && <p role="alert" className="notice error">{error}</p>}</section>;
 }
 export function Page() {
+ const [section, setSection] = useState<keyof typeof SECTIONS>("tasks");
  const [selected, setSelected] = useState<string | null>(null);
- const { rpc, projects, board, error, load, connection } = useBoard(selected);
+ const { rpc, projects, board, error, load, connection } = useBoard(selected, section === "tasks");
+ const sendQuote = useSendQuote();
+ const [records, setRecords] = useState<{ documents: Array<{ path: string; title: string; excerpt: string }>; decisions: Array<{ path: string; title: string; excerpt: string }>; warnings: string[] }>(NO_RECORDS);
+ const [recordsError, setRecordsError] = useState("");
+ const recordRequest = useRef(0);
  const [query, setQuery] = useState("");
  const [storage, setStorage] = useState("active");
  const [hideDone, setHideDone] = useState(false);
  const [boardFilters, setBoardFilters] = useState<BoardFilters>({ status: [], priority: [], assignee: "", labels: [], sort: "ordinal", direction: "asc" });
  const [modal, setModal] = useState<Task | null>(null);
  const [settings, setSettings] = useState(false);
+ const [listHidden, setListHidden] = useState(false);
  const [actionError, setActionError] = useState("");
  const [moving, setMoving] = useState(false);
  const dragged = useRef<Task | null>(null);
  useEffect(() => { if (!selected && projects[0]) setSelected((projects.find(project => project.sources.length > 0) ?? projects[0]).id); }, [projects, selected]);
+ const loadRecords = useCallback(async () => {
+  const request = ++recordRequest.current;
+  if (!selected || section === "tasks") { setRecords(NO_RECORDS); return; }
+  try { const result = await rpc.call("markdownRecords", { projectId: selected }); if (request === recordRequest.current) { setRecords(result); setRecordsError(""); } }
+  catch (cause) { if (request === recordRequest.current) setRecordsError(textError(cause)); }
+ }, [rpc, selected, section]);
+ useEffect(() => { void loadRecords(); return () => { recordRequest.current++; }; }, [loadRecords]);
+ useRealtime("backlog-changed", () => { if (section !== "tasks") void loadRecords(); });
  const project = projects.find(item => item.id === selected);
  const statuses = board?.statuses ?? [];
  const doneStatus = statuses.at(-1);
@@ -90,12 +108,30 @@ export function Page() {
   setModal(result.task); await load(); return result;
  };
  const currentTask = modal ? board?.tasks.find(task => task.path === modal.path) ?? modal : null;
+ const recordKind = section === "documents" ? "document" : "decision";
+ const quote = (text: string, file: string) => {
+  if (!project) return;
+  const root = project.sources.find(source => source.id === project.selectedSourceId)?.path;
+  setActionError("");
+  sendQuote(project.id, quoteWithSource(text, file, root)).catch(cause => setActionError(`Could not add the quote to chat: ${textError(cause)}`));
+ };
+ const changeProject = (projectId: string) => {
+  if (modal) return;
+  setSelected(projectId); setSettings(false); setActionError(""); setRecords(NO_RECORDS); setRecordsError("");
+ };
  return <div className="backlog-root">
-  <aside className="section-nav" aria-label="Backlog.MD sections"><strong>Backlog.MD</strong><button className="section-link active" aria-current="page">Tasks</button></aside>
-  <main className="board-area"><header className="toolbar"><div><h1>{project?.name ?? "Backlog.MD"}</h1><p>{board?.folder ?? "Markdown tasks across your projects"}</p></div><span className="connection">{moving ? "Saving move..." : connection === "connected" ? "Live updates" : "Reconnecting"}</span></header>
-   <div className="controls"><input aria-label="Search tasks" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tasks" /><select aria-label="Task storage" value={storage} onChange={event => setStorage(event.target.value)}>{Object.entries(STORAGE).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select><label className="completed-toggle"><input type="checkbox" checked={hideDone} onChange={event => setHideDone(event.target.checked)} />Hide {doneStatus || "completed"}</label><button disabled={!project} onClick={() => setSettings(!settings)}>Folder settings</button><button onClick={() => void load()}>Refresh</button></div>
+  <header className="app-header">
+   <div className="header-project"><strong>Backlog.MD</strong><span aria-hidden="true">/</span><select aria-label="BB project" title={board?.folder ?? undefined} value={selected ?? ""} disabled={Boolean(modal)} onChange={event => changeProject(event.target.value)}>{!selected && <option value="">Choose a project</option>}{projects.map(item => <option key={item.id} value={item.id}>{item.name}{item.sources.length ? "" : " (no source)"}</option>)}</select></div>
+   <nav className="section-tabs" aria-label="Backlog.MD sections">{(Object.keys(SECTIONS) as Array<keyof typeof SECTIONS>).map(item => <button key={item} className="section-tab" aria-current={section === item ? "page" : undefined} onClick={() => { setSection(item); setSettings(false); }}>{SECTIONS[item]}</button>)}</nav>
+   <div className="header-actions"><span className="connection">{moving ? "Saving move..." : connection === "connected" ? "Live updates" : "Reconnecting"}</span><button aria-pressed={settings} disabled={!project} onClick={() => setSettings(open => !open)}>Folder settings</button><button onClick={() => void (section === "tasks" ? load() : loadRecords())}>Refresh</button></div>
+  </header>
+  {settings && project && <FolderSettings key={project.id} project={project} rpc={rpc} saved={async () => { await load(); await loadRecords(); }} close={() => setSettings(false)} />}
+  {section !== "tasks" ? <>
+   {!selected ? <main className="record-empty-screen"><h2>Choose a project</h2><p>Select a BB project to browse its Markdown files.</p></main> : <MarkdownRecordPanel key={`${selected}:${section}`} projectId={selected} kind={recordKind} records={records[section]} warnings={records.warnings} rpc={rpc} addQuote={quote} listHidden={listHidden} onToggleList={() => setListHidden(hidden => !hidden)} error={recordsError || actionError || (board?.state !== "ready" ? board?.message ?? "" : "")} />}
+  </> : <>
+  <main className="board-area">
+   <div className="controls"><input aria-label="Search tasks" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tasks" /><select aria-label="Task storage" value={storage} onChange={event => setStorage(event.target.value)}>{Object.entries(STORAGE).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select><label className="completed-toggle"><input type="checkbox" checked={hideDone} onChange={event => setHideDone(event.target.checked)} />Hide {doneStatus || "completed"}</label></div>
    {board && <BoardControls filters={boardFilters} options={filterOptions} setFilters={setBoardFilters} />}
-   {settings && project && <FolderSettings key={project.id} project={project} rpc={rpc} saved={load} close={() => setSettings(false)} />}
    {(error || actionError) && <p role="alert" className="notice error">{error || actionError}</p>}
    {board?.warnings.map((warning, index) => <p className="notice" key={index}>{warning}</p>)}
    {!board ? <div className="empty">{selected ? "Loading tasks..." : "Select a project to view its tasks."}</div> : board.state !== "ready" ? <div className="empty"><h2>{board.state === "ambiguous" ? "Choose a Backlog folder" : board.state === "missing" ? "Connect a task folder" : "Project source unavailable"}</h2><p>{board.message}</p>{board.candidates.map(candidate => <p key={candidate}>{candidate}</p>)}<button onClick={() => setSettings(true)}>Open folder settings</button></div> : <>
@@ -106,8 +142,8 @@ export function Page() {
     })}</div>
    </>}
   </main>
-  <aside className="project-rail" aria-label="BB projects"><div className="rail-heading"><h2>Projects</h2><span>{projects.length}</span></div>{projects.map(item => <button key={item.id} className={selected === item.id ? "project-row selected" : "project-row"} aria-current={selected === item.id ? "page" : undefined} onClick={() => { if (modal) return; setSelected(item.id); setSettings(false); setActionError(""); }}>{item.name}{!item.sources.length && <small>No source</small>}</button>)}</aside>
-  {currentTask && <TaskModal key={currentTask.path} task={currentTask} draftStorageKey={`${selected}:${board?.sourceId}:${currentTask.path}`} statuses={statuses} relatedTasks={board?.tasks ?? []} onOpenTask={setModal} fieldChoices={board?.choices} missing={!board?.tasks.some(task => task.path === currentTask.path)} onClose={() => setModal(null)} onSave={save} />}
+  </>}
+  {currentTask && <TaskModal key={currentTask.path} task={currentTask} onQuote={text => quote(text, currentTask.path)} draftStorageKey={`${selected}:${board?.sourceId}:${currentTask.path}`} statuses={statuses} relatedTasks={board?.tasks ?? []} onOpenTask={setModal} fieldChoices={board?.choices} missing={!board?.tasks.some(task => task.path === currentTask.path)} onClose={() => setModal(null)} onSave={save} />}
  </div>;
 }
-export default definePluginApp(app => { app.contentScripts.register({ id: "mention-preview", mount: mountMentionPreview }); app.slots.navPanel({ id: "backlog", title: "Backlog.MD", icon: "ListTodo", path: "backlog", component: Page }); });
+export default definePluginApp(app => { app.contentScripts.register({ id: "mention-preview", mount: mountMentionPreview }); app.slots.experimental_threadHeaderAction({ id: "pending-quote", title: "Backlog.MD quote", component: PendingQuoteReceiver }); app.slots.navPanel({ id: "backlog", title: "Backlog.MD", icon: "ListTodo", path: "backlog", component: Page }); });

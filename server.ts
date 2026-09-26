@@ -4,7 +4,7 @@ import { z } from "zod";
 import { rpcContract } from "./src/contract";
 import { watchContract, watchSignals } from "./src/watch-contract";
 import { discover, confinedTaskPath, absoluteFolder, type Config } from "./src/discovery";
-import { parseTask, patchTask } from "./src/task-format";
+import { markdownExcerpt, parseTask, patchTask } from "./src/task-format";
 import { compareTasks, insertionOrdinal } from "./src/ordering";
 import { descriptionPreview } from "./src/task-relations";
 import type { Board, Project, Task, Edit } from "./src/model";
@@ -17,6 +17,17 @@ const mentionIdentity = z.object({
   hostId: z.string().min(1), root: z.string().min(1), folder: z.string().min(1), taskId: z.string().min(1),
 }).strict();
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+function confinedMarkdownPath(folder: string, kind: "document" | "decision", candidate: string) {
+  const file = path.resolve(folder, candidate);
+  const relative = path.relative(folder, file);
+  const directory = kind === "document" ? "docs" : "decisions";
+  if (!relative.startsWith(`${directory}/`) || relative.split("/").includes("..") || !/\.md$/i.test(file)) throw new Error(`Markdown path is outside the selected ${directory} directory.`);
+  return file;
+}
+function markdownTitle(content: string, file: string) {
+  const heading = content.match(/^#\s+(.+?)\s*#*\s*$/m)?.[1]?.trim();
+  return heading || path.basename(file).replace(/\.md$/i, "").replace(/[-_]+/g, " ");
+}
 export default function plugin(bb: BbPluginApi) {
   const host = bb.hosts.experimental_client({ contract: watchContract, experimental_signals: watchSignals });
   const watches = new Map<string, string>();
@@ -50,7 +61,7 @@ export default function plugin(bb: BbPluginApi) {
   async function read(hostId: string, file: string, rootPath: string) {
     const result = await bb.sdk.files.read({ hostId, path: file, rootPath });
     if (result.contentEncoding !== "utf8") throw new Error(`Not a UTF-8 text file: ${file}`);
-    if (result.sizeBytes > 512 * 1024) throw new Error(`Task exceeds the 512 KiB editing limit: ${file}`);
+    if (result.sizeBytes > 512 * 1024) throw new Error(`Markdown file exceeds the 512 KiB editing limit: ${file}`);
     return { raw: result.content, revision: result.sha256 };
   }
   async function resolve(projectId: string) {
@@ -93,6 +104,34 @@ export default function plugin(bb: BbPluginApi) {
     }
     for (const [id, same] of ids) if (same.length > 1) for (const task of same) task.errors.push(`Duplicate task ID ${id}; resolve duplicates before editing.`);
     return { tasks: tasks.sort(compareTasks), warnings };
+  }
+  async function markdownRecords(projectId: string) {
+    const { source, result } = await resolve(projectId);
+    if (result.state !== "ready" || !result.folder) return { documents: [], decisions: [], warnings: [] };
+    const inventory = await host.call("markdownInventory", { folder: result.folder }, { hostId: source.hostId });
+    const warnings = [...inventory.warnings];
+    const excerpts = new Map<string, string>();
+    // Same bounded batches as task reads; an unreadable file keeps its card with no excerpt.
+    // ponytail: rereads every file on each list refresh; cache by revision if folders grow large.
+    const files = [...inventory.documents, ...inventory.decisions];
+    for (let i = 0; i < files.length; i += 12) {
+      await Promise.all(files.slice(i, i + 12).map(async file => {
+        try { excerpts.set(file, markdownExcerpt((await read(source.hostId, file, result.folder!)).raw)); }
+        catch (error) { warnings.push(`${path.basename(file)}: ${message(error)}`); }
+      }));
+    }
+    const summarize = (file: string) => ({ path: file, title: path.basename(file).replace(/\.md$/i, "").replace(/[-_]+/g, " "), excerpt: excerpts.get(file) ?? "" });
+    return { documents: inventory.documents.map(summarize).sort((a, b) => a.title.localeCompare(b.title)), decisions: inventory.decisions.map(summarize).sort((a, b) => a.title.localeCompare(b.title)), warnings };
+  }
+  async function markdownRecord(projectId: string, kind: "document" | "decision", candidate: string) {
+    const { source, result } = await resolve(projectId);
+    if (result.state !== "ready" || !result.folder) throw new Error("The selected Backlog folder is unavailable.");
+    const file = confinedMarkdownPath(result.folder, kind, candidate);
+    const inventory = await host.call("markdownInventory", { folder: result.folder }, { hostId: source.hostId });
+    const allowed = kind === "document" ? inventory.documents : inventory.decisions;
+    if (!allowed.includes(file)) throw new Error("This Markdown file is no longer in the selected Backlog folder.");
+    const current = await read(source.hostId, file, result.folder);
+    return { source, folder: result.folder, record: { path: file, title: markdownTitle(current.raw, file), revision: current.revision, content: current.raw } };
   }
   async function board(projectId: string): Promise<Board> {
     const empty: Board = { projectId, sourceId: null, folder: null, state: "unavailable", choices: {}, message: "", candidates: [], statuses: [], lastChangeAt: changedAt.get(projectId) ?? null, tasks: [], warnings: [] };
@@ -194,6 +233,20 @@ export default function plugin(bb: BbPluginApi) {
   bb.rpc.register(rpcContract, {
     projects,
     board: ({ projectId }) => board(projectId),
+    markdownRecords: ({ projectId }) => markdownRecords(projectId),
+    readMarkdownRecord: async ({ projectId, kind, path: file }) => (await markdownRecord(projectId, kind, file)).record,
+    saveMarkdownRecord: input => serial(input.projectId, async () => {
+      const context = await markdownRecord(input.projectId, input.kind, input.path);
+      if (context.record.revision !== input.revision) return { record: context.record, conflict: true, message: "This file changed while you were editing. Review the current version and keep your draft." };
+      const result = await bb.sdk.files.write({ hostId: context.source.hostId, path: context.record.path, rootPath: context.folder, content: input.content, expectedSha256: input.revision, createParents: false });
+      if (result.outcome === "conflict") {
+        const latest = await markdownRecord(input.projectId, input.kind, input.path);
+        return { record: latest.record, conflict: true, message: "This file changed while you were editing. Review the current version and keep your draft." };
+      }
+      const record = { ...context.record, title: markdownTitle(input.content, context.record.path), revision: result.sha256, content: input.content };
+      bb.realtime.publish("backlog-changed", { projectId: input.projectId });
+      return { record, conflict: false, message: "" };
+    }),
     settings: input => serial(input.projectId, async () => {
       const { project } = await projectInfo(input.projectId);
       const source = project.sources.find(s => s.id === input.sourceId);

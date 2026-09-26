@@ -30,7 +30,7 @@ async function setup(initial = raw) {
     files.set(args.path, args.content); return { outcome: "written", sha256: hash(args.content), sizeBytes: args.content.length };
    },
   },
- }, experimental_callHostRpc: async ({ method }) => method === "inventory" ? { files: [...files.keys()].map(path => ({ path, storage: "active" })), warnings: [] } : null });
+ }, experimental_callHostRpc: async ({ method }) => method === "inventory" ? { files: [...files.keys()].map(path => ({ path, storage: "active" })), warnings: [] } : method === "markdownInventory" ? { documents: ["/repo/backlog/docs/doc-1.md"], decisions: [], warnings: [] } : null });
  await plugin(fake.bb);
  disposals.push(() => fake.harness.lifecycle.dispose());
  const input = { projectId: "p", sourceId: "s", folder: "/repo/backlog", path: taskPath, taskId: "T-1", revision: hash(initial) };
@@ -101,6 +101,25 @@ test("project listing requests Personal and keeps sourceless projects visible", 
  const f = await setup(); const result = rpcContract.projects.output.parse(await f.harness.behavior.callRpc("projects", null));
  expect(result.map(project => project.name)).toEqual(["Project", "Personal"]);
  expect(f.harness.inspection.sdk.callsTo("projects.list")[0]).toEqual([{ includePersonal: true }]);
+});
+
+test("markdown records resolve the requested project", async () => {
+ const f = await setup(); f.files.set("/repo/backlog/docs/doc-1.md", "---\nid: doc-1\n---\n# Plan\n\nBacklog is the sole maintained plan.\n");
+ const result = rpcContract.markdownRecords.output.parse(await f.harness.behavior.callRpc("markdownRecords", { projectId: "p" }));
+ expect(result.documents).toEqual([{ path: "/repo/backlog/docs/doc-1.md", title: "doc 1", excerpt: "Backlog is the sole maintained plan." }]);
+ expect(result.warnings).toEqual([]);
+ expect(f.harness.inspection.sdk.callsTo("projects.get")[0]).toEqual([{ projectId: "p" }]);
+});
+
+test("document saves are revision guarded and confined to the docs folder", async () => {
+ const f = await setup(); const doc = "/repo/backlog/docs/doc-1.md", original = "# Plan\n\nFirst.\n";
+ f.files.set(doc, original);
+ const save = (revision: string) => f.harness.behavior.callRpc("saveMarkdownRecord", { projectId: "p", kind: "document", path: doc, revision, content: "# Plan\n\nSecond.\n" });
+ const stale = rpcContract.saveMarkdownRecord.output.parse(await save(hash("older")));
+ expect(stale.conflict).toBe(true); expect(stale.record.content).toBe(original); expect(f.writes).toHaveLength(0);
+ const saved = rpcContract.saveMarkdownRecord.output.parse(await save(hash(original)));
+ expect(saved.conflict).toBe(false); expect(f.files.get(doc)).toBe("# Plan\n\nSecond.\n"); expect(f.writes[0]).toMatchObject({ path: doc, expectedSha256: hash(original) });
+ await expect(f.harness.behavior.callRpc("readMarkdownRecord", { projectId: "p", kind: "document", path: "/repo/backlog/tasks/t.md" })).rejects.toThrow("outside the selected docs directory");
 });
 
 test("a file replaced by a different task cannot receive a stale draft", async () => {

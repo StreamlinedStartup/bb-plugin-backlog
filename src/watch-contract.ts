@@ -4,5 +4,6 @@ export const watchContract = defineRpcContract({
   watch: { input: z.object({ key: z.string().min(1), rootPath: z.string().min(1), folder: z.string().min(1) }).strict(), output: z.null() },
   unwatch: { input: z.object({ key: z.string().min(1) }).strict(), output: z.null() },
   inventory: { input: z.object({ folder: z.string().min(1) }).strict(), output: z.object({ files: z.array(z.object({ path: z.string(), storage: z.enum(["active", "completed", "archived"]) })), warnings: z.array(z.string()) }).strict() },
+  markdownInventory: { input: z.object({ folder: z.string().min(1) }).strict(), output: z.object({ documents: z.array(z.string()), decisions: z.array(z.string()), warnings: z.array(z.string()) }).strict() },
 });
 export const watchSignals = { changed: { payload: z.object({ key: z.string(), error: z.string().optional() }).strict() } } satisfies ExperimentalHostSignals;

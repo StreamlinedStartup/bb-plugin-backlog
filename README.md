@@ -1,6 +1,7 @@
 # Backlog.MD
 
-A light-only Kanban page for Backlog.md tasks, installed as a BB plugin.
+A light-only Backlog.md browser for BB, with a Kanban board for tasks and
+Markdown workspaces for project documents and decisions.
 
 This is an independent BB plugin, not affiliated with or endorsed by the
 official [Backlog.md project](https://github.com/MrLesk/Backlog.md).
@@ -29,6 +30,19 @@ Windows host paths have not been verified.
 Open **Backlog.MD** in BB navigation. The center board shows configured status
 lanes, including empty lanes. Every BB project, including Personal, appears
 in the right rail. On narrow screens, projects become a horizontal selector.
+
+## Documents and Decisions
+
+Use the left navigation to open **Documents** or **Decisions**. The middle
+panel lists Markdown files from `docs/` or `decisions/` in the selected Backlog
+folder. Choose a file to read its rendered Markdown in the right panel, or
+switch to **Edit** for a quick change. Saves use the file revision to detect
+concurrent changes and keep a local draft when a conflict needs review.
+
+Select text in a preview and click the floating **+** button to add it to the
+BB chat as a quoted passage. The composer receives focus so you can continue
+writing your request. On narrow screens, section navigation, file rows, and the
+preview stack vertically.
 
 ## Working with tasks
 
@@ -92,7 +106,8 @@ host or project without a source stays visible with an explanation.
 
 Folder settings accepts relative or absolute paths, including a folder outside
 the checkout. Browse invokes BB on the selected source host. The selected
-folder must be a real directory. Task storage symlinks are skipped and reported.
+folder must be a real directory. Task, document, and decision symlinks are
+skipped and reported.
 Root configuration overrides legacy `config.yml` inside the task folder.
 Statuses, priorities, task types, and project classifications are validated
 against configuration when edited. Unknown statuses remain visible in their
@@ -148,12 +163,14 @@ Comments. Standard section sentinels and legacy known headings are read for task
 Comment author/date/index metadata is preserved. Custom sections remain visible
 in the complete preview; edit them directly with your project tooling.
 
-Bounds are 512 KiB per task, 5 MiB of board task text, 3000 files, 100 directories,
-and 16 directory levels. Scan-limit warnings block writes to avoid making unsafe
-identity assumptions. Remote images are represented by their alt text; raw HTML
-is not executed. Code examples remain code. POSIX host paths are supported;
-Windows-host paths have not been verified. Decisions, Docs, and standalone Plans
-are reserved future sections; task implementation plans work today.
+Bounds are 512 KiB per Markdown file, 5 MiB of board task text, 3000 task files,
+1000 documents and 1000 decisions, 100 directories, and 16 directory levels.
+Task scan-limit warnings block task writes to avoid unsafe identity assumptions;
+document and decision scan warnings are shown in their file browser.
+Remote images are represented by their alt text; raw HTML is not executed. Code
+examples remain code. POSIX host paths are supported; Windows-host paths have
+not been verified. Standalone Plans are not currently listed as a separate view;
+task implementation plans work in the task board.
 
 Task creation, deletion, archive/restore, CLI execution, Git actions, and status
 hooks are outside this version.
