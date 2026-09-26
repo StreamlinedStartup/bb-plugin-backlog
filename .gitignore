@@ -5,3 +5,4 @@ dist/
 .mise-state/
 .bun-cache/
 .test-results/
+.DS_Store

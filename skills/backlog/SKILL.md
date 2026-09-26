@@ -26,8 +26,13 @@ Changing status does not restore archived tasks. The board provides storage
 filters and numeric `ordinal` ordering, including keyboard move controls.
 
 No task creation, deletion, archive/restore, status hooks, Git actions, or
-Backlog CLI commands are exposed by this plugin. Decisions, Docs, and Plans
-are future sections; task implementation-plan sections are supported today.
+Backlog CLI commands are exposed by this plugin. The Documents and Decisions
+tabs read and edit Markdown in `docs/` and `decisions/` of the same folder;
+their saves use the same hash guards. Standalone Plans have no tab.
+
+A user can quote selected text from a task, document, or decision into the
+project's latest thread draft. The quote ends with a `Source:` line holding
+the file path relative to the checkout; read that file for full context.
 
 ## Composer mentions
 
